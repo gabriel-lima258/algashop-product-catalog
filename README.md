@@ -1,0 +1,1 @@
+# algashop-product-catalog
