@@ -4,15 +4,15 @@ import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
     request {
-        method POST()
+        method PUT()
         headers {
             accept 'application/json'
             contentType 'application/json'
         }
-        urlPath("/api/v1/products") {
+        urlPath("/api/v1/products/c77e6ec2-7103-48b3-8e4f-3b58e43fb75a") {
             body([
                     name: value(
-                            test("Notebook X11"),
+                            test("Desktop X900"),
                             stub(nonBlank())
                     ),
                     brand: value(
@@ -36,31 +36,21 @@ Contract.make {
                             stub(anyUuid())
                     ),
                     description: value(
-                            test("A Gamer Notebook"),
+                            test("A Gamer Desktop"),
                             stub(optional(nonBlank()))
                     )
             ])
         }
     }
     response {
-        status 201
+        status 404
         headers {
-            contentType 'application/json'
+            contentType 'application/problem+json'
         }
         body([
-                id: anyUuid(),
-                addedAt: anyIso8601WithOffset(),
-                name: fromRequest().body('$.name'),
-                brand: fromRequest().body('$.brand'),
-                regularPrice: fromRequest().body('$.regularPrice'),
-                salePrice: fromRequest().body('$.salePrice'),
-                inStock: anyBoolean(),
-                enabled: fromRequest().body('$.enabled'),
-                category: [
-                        id: anyUuid(),
-                        name: "Notebook"
-                ],
-                description: fromRequest().body('$.description')
+                instance: fromRequest().path(),
+                type: "/errors/not-found",
+                title: "Not found"
         ])
     }
 }

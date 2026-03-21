@@ -4,6 +4,8 @@ plugins {
 	id 'org.springframework.boot' version '3.5.5'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.springframework.cloud.contract' version '4.3.0'
+    // Plugin que processa arquivos .adoc e gera HTML, PDF, etc.
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
 group = 'com.algaworks.algashop'
@@ -32,12 +34,20 @@ publishing {
 
 ext {
 	set('springCloudVersion', "2025.0.0")
+    // snippetsDir: diretório onde os testes depositam os fragmentos .adoc gerados.
+    // Este caminho é passado para a task 'asciidoctor' como atributo '{snippets}',
+    // que é então referenciado nos arquivos .adoc com: include::{snippets}/...
+    set('snippetsDir', file("build/generated-snippets"))
 }
 
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    // asciidoctorExt: escopo especial para a integração Spring REST Docs + AsciiDoc.
+    // A dependência 'spring-restdocs-asciidoctor' neste escopo habilita o processamento
+    // das diretivas operation::[] nos arquivos .adoc (alternativa às include:: manuais).
+    asciidoctorExt
 }
 
 dependencies {
@@ -45,6 +55,18 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Integração Spring REST Docs + AsciiDoc: habilita macros especiais no .adoc
+    // como operation::[] que incluem automaticamente todos os snippets de uma operação.
+    // Precisa estar no escopo 'asciidoctorExt' (não testImplementation) para que
+    // o plugin asciidoctor reconheça e processe essas macros na hora de gerar o HTML.
+    asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
+
+    // Integração Spring REST Docs + MockMvc: usada nos testes para capturar
+    // request/response reais e gerar os snippets .adoc automaticamente.
+    // Configurado em ProductBase.java via MockMvcRestDocumentation.
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.cloud:spring-cloud-starter-contract-verifier'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -61,9 +83,45 @@ contracts {
 }
 
 tasks.named('contractTest') {
+    // Declara snippetsDir como saída desta task.
+    // Isso informa ao Gradle que os arquivos em build/generated-snippets
+    // são produzidos por contractTest — necessário para que a task 'asciidoctor'
+    // (que os consome como entrada) saiba quando precisa reprocessar.
+    outputs.dir snippetsDir
 	useJUnitPlatform()
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// Task 'asciidoctor': converte os arquivos .adoc em HTML (ou PDF, etc.)
+asciidoctor {
+    // Garante que os snippets existam antes de tentar incluí-los no .adoc.
+    // Ordem de execução: contractTest → asciidoctor
+    dependsOn contractTest
+
+    // Declara snippetsDir como entrada desta task.
+    // O Gradle usa isso para rastrear mudanças e decidir se reprocessa ou não.
+    inputs.dir snippetsDir
+
+    // Torna a variável '{snippets}' disponível dentro dos arquivos .adoc.
+    // Uso no .adoc: include::{snippets}/ProductTest/validate_findProductByIdV1/http-request.adoc[]
+    attributes 'snippets': snippetsDir
+
+    // Processa apenas o index.adoc como ponto de entrada da documentação.
+    // Outros .adoc podem ser incluídos via include:: dentro do index.adoc.
+    // Para adicionar novas páginas, crie arquivos .adoc e inclua-os no index.adoc.
+    sources {
+        include 'index.adoc'
+    }
+
+    // Faz com que os caminhos relativos nos include:: sejam resolvidos a partir
+    // do diretório do próprio arquivo .adoc (src/docs/asciidoc/).
+    // Sem isso, includes relativos falhariam durante o build.
+    baseDirFollowsSourceFile()
+
+    // Diretório de saída do HTML gerado.
+    // Abra build/docs/asciidoc/index.html no navegador para ver a documentação.
+    outputDir = file("build/docs/asciidoc")
 }

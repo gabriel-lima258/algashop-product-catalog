@@ -1,27 +1,37 @@
-package com.algaworks.algashop.product.catalog.presentation;
+package com.algaworks.algashop.product.catalog.application.product.management;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ProductDetailOutput {
-    private UUID id;
-    private OffsetDateTime addedAt;
+public class ProductInput {
+    @NotBlank
     private String name;
+
+    @NotBlank
     private String brand;
+
+    @NotNull
     private BigDecimal regularPrice;
+
+    @NotNull
     private BigDecimal salePrice;
-    private Boolean inStock;
+
+    @NotNull
     private Boolean enabled;
-    private CategoryMinimalOutput category;
+
+    @NotNull
+    private UUID categoryId;
+
     private String description;
 }

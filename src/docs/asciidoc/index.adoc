@@ -1,0 +1,81 @@
+////
+ARQUIVO FONTE DA DOCUMENTAÇÃO: index.adoc
+================================================================================
+
+Este é o ponto de entrada da documentação gerada pelo Spring REST Docs.
+O plugin Asciidoctor processa este arquivo e gera o HTML final em:
+  build/docs/asciidoc/index.html
+
+COMO FUNCIONA A DIRETIVA include::
+------------------------------------
+A diretiva include::{snippets}/CAMINHO/arquivo.adoc[] embutirá o conteúdo
+do arquivo .adoc gerado pelos testes diretamente neste documento.
+
+A variável {snippets} é definida no build.gradle:
+  attributes 'snippets': snippetsDir   →  build/generated-snippets/
+
+O caminho dos snippets segue a convenção configurada em ProductBase.java:
+  MockMvcRestDocumentation.document("{ClassName}/{methodName}")
+
+Portanto, cada método de teste gera snippets em:
+  build/generated-snippets/<NomeDaClasseDeTestGerada>/<nomeDoMetodo>/
+
+Exemplo: o contrato findProductByIdV1.groovy gera o método
+  validate_findProductByIdV1() na classe ProductTest,
+  que resulta em snippets em:
+  build/generated-snippets/ProductTest/validate_findProductByIdV1/
+
+SNIPPETS DISPONÍVEIS POR OPERAÇÃO
+------------------------------------
+Para cada operação, os seguintes arquivos .adoc são gerados automaticamente:
+  - http-request.adoc    → requisição HTTP formatada
+  - http-response.adoc   → resposta HTTP formatada
+  - curl-request.adoc    → comando curl equivalente
+  - httpie-request.adoc  → comando httpie equivalente
+  - request-body.adoc    → corpo da requisição isolado
+  - response-body.adoc   → corpo da resposta isolado
+
+COMO ADICIONAR NOVOS ENDPOINTS À DOCUMENTAÇÃO
+-----------------------------------------------
+1. Crie um novo contrato .groovy em src/contractTest/resources/contracts/product/
+2. Execute ./gradlew contractTest para gerar os snippets
+3. Adicione uma nova seção aqui usando include:: para os snippets desejados
+4. Execute ./gradlew asciidoctor para regenerar o HTML
+
+PARA VISUALIZAR A DOCUMENTAÇÃO
+--------------------------------
+  ./gradlew asciidoctor
+  Abra: build/docs/asciidoc/index.html
+////
+
+= AlgaShop Documentation
+// Configura o realce de sintaxe para blocos de código
+:source-highlighter: highlight.js
+
+== Introduction
+This is an example of Spring REST Docs generated documentation.
+
+== Product Catalog API
+Collection of CRUD API endpoints used to manipulate products registered in the application.
+
+// =============================================================================
+// GET /api/v1/products/{productId}
+// Snippets gerados pelo método validate_findProductByIdV1() em ProductTest,
+// que por sua vez é gerado a partir do contrato findProductByIdV1.groovy.
+// =============================================================================
+=== Get Product By Id
+Obtains a specific product registered in the application by its unique identifier.
+
+==== Sample Request
+// Inclui o snippet com a requisição HTTP real capturada durante o teste de contrato
+include::{snippets}/ProductTest/validate_findProductByIdV1/http-request.adoc[]
+
+==== Sample Response
+// Inclui o snippet com a resposta HTTP real capturada durante o teste de contrato.
+// O JSON aparece formatado (pretty-print) porque ProductBase configura:
+//   .withResponseDefaults(Preprocessors.prettyPrint())
+include::{snippets}/ProductTest/validate_findProductByIdV1/http-response.adoc[]
+
+==== CURL sample
+// Inclui o comando curl equivalente, pronto para copiar e executar no terminal
+include::{snippets}/ProductTest/validate_findProductByIdV1/curl-request.adoc[]
