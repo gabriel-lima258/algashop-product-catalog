@@ -1,0 +1,49 @@
+package com.algaworks.algashop.product.catalog.infrastructure.persistence;
+
+import org.bson.UuidRepresentation;
+import org.jspecify.annotations.Nullable;
+import org.springframework.boot.mongodb.autoconfigure.MongoClientSettingsBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+
+@Configuration
+public class MongoConfig {
+
+    // Mongo por padrão tem que configurar o UUID como id padrão
+    @Bean
+    public MongoClientSettingsBuilderCustomizer uuidCustomizer() {
+        return builder -> builder.uuidRepresentation(UuidRepresentation.STANDARD);
+    }
+
+    // preparando os conversor para dentro da classe mongo
+    @Bean
+    public MongoCustomConversions customConversions() {
+        return new MongoCustomConversions(
+                List.of(new OffsetDatetimeReadConverter(), new OffsetDatetimeWriteConverter())
+        );
+    }
+
+    // Convertendo o tipo de data OffsetDatetime não aceita em Mongo para o padrão Date
+    public static class OffsetDatetimeReadConverter implements Converter<Date, OffsetDateTime> {
+
+        @Override
+        public @Nullable OffsetDateTime convert(Date source) {
+            return source.toInstant().atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        }
+    }
+
+    public static class OffsetDatetimeWriteConverter implements Converter<OffsetDateTime, Date> {
+
+        @Override
+        public @Nullable Date convert(OffsetDateTime source) {
+            return Date.from(source.toInstant());
+        }
+    }
+}
