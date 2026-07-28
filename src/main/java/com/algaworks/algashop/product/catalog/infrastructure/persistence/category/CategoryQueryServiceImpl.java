@@ -6,6 +6,7 @@ import com.algaworks.algashop.product.catalog.application.category.query.Categor
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryQueryService;
 import com.algaworks.algashop.product.catalog.application.util.Mapper;
 import com.algaworks.algashop.product.catalog.domain.category.Category;
+import com.algaworks.algashop.product.catalog.domain.category.CategoryNotFoundException;
 import com.algaworks.algashop.product.catalog.domain.category.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class CategoryQueryServiceImpl implements CategoryQueryService {
     @Override
     public CategoryDetailOutput findById(UUID categoryId) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(ResourceNotFoundException::new);
+                .orElseThrow(() -> new CategoryNotFoundException(categoryId));
         return mapper.convert(category, CategoryDetailOutput.class);
     }
 
