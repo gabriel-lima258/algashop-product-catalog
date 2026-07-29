@@ -4,4 +4,27 @@ spring:
   application:
     name: product-catalog
   mongodb:
+    # Spring Boot 4: a propriedade e spring.mongodb.uri (era spring.data.mongodb.uri no 3.x).
+    # authSource=admin e obrigatorio - o usuario root vive no banco admin, os dados em product_catalog
     uri: mongodb://root:algashop@localhost:27017/product_catalog?authSource=admin
+
+# DEBUG do driver: mostra no console cada comando enviado ao Mongo.
+# Otimo para conferir a query gerada pelos Criteria; barulhento demais para deixar ligado sempre
+logging:
+  level:
+    org.mongodb.driver.protocol.command: DEBUG
+    org.mongodb.driver.protocol.query: DEBUG
+    org.mongodb.driver.connection: DEBUG
+
+# Carga de massa de teste - ver DataLoader.java
+# ATENCAO: com auto-drop: true as colecoes sao APAGADAS e recriadas a cada inicializacao.
+# Serve para o ambiente de estudo comecar sempre igual; NAO pode ficar assim fora daqui
+algashop:
+  data-load:
+    enabled: true
+    auto-drop: true
+    sources:
+      - location: db/testdata/categories.json
+        collection: categories
+      - location: db/testdata/products.json
+        collection: products

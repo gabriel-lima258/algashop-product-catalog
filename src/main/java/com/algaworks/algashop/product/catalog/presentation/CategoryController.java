@@ -28,7 +28,7 @@ import com.algaworks.algashop.product.catalog.application.category.management.Ca
 import com.algaworks.algashop.product.catalog.application.category.management.CategoryManagementApplicationService;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryDetailOutput;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryQueryService;
-import com.algaworks.algashop.product.catalog.application.PageModel;
+import com.algaworks.algashop.product.catalog.application.util.PageModel;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

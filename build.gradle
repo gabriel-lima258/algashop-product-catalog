@@ -49,6 +49,11 @@ configurations {
     // A dependência 'spring-restdocs-asciidoctor' neste escopo habilita o processamento
     // das diretivas operation::[] nos arquivos .adoc (alternativa às include:: manuais).
     asciidoctorExt
+    // mockitoAgent: escopo só para resolver o JAR do Mockito e passá-lo como -javaagent.
+    // A partir do JDK 21 o "self-attach" de agente é desencorajado (e no 24 falha), então
+    // o Mockito precisa ser carregado explicitamente como agente na JVM de teste.
+    // transitive = false: queremos o JAR do mockito-core sozinho, não a árvore de dependências.
+    mockitoAgent {transitive = false}
 }
 
 dependencies {
@@ -60,6 +65,8 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.20.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
@@ -67,6 +74,7 @@ dependencies {
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
     testImplementation 'io.rest-assured:spring-mock-mvc:6.0.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    mockitoAgent 'org.mockito:mockito-core'
 }
 
 dependencyManagement {
@@ -77,6 +85,15 @@ dependencyManagement {
 
 contracts {
     packageWithBaseClasses = "com.algaworks.algashop.product.catalog.contract.base"
+}
+
+// Três suítes separadas, uma por tipo de teste:
+//   test            -> unitários e de fatia, rodam sozinhos (é o que roda no dia a dia)
+//   contractTest    -> gerados pelo Spring Cloud Contract a partir dos .groovy
+//   integrationTest -> classes *IT, exigem infraestrutura de pé (Mongo)
+// 'check' amarra as três, então ./gradlew check (ou build) valida tudo de uma vez.
+tasks.named('check') {
+    dependsOn(test, contractTest, integrationTest)
 }
 
 tasks.named('contractTest') {
@@ -90,6 +107,42 @@ tasks.named('contractTest') {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+test {
+    // tira os *IT daqui: ./gradlew test tem que passar sem nenhum container de pé
+    filter {
+        excludeTestsMatching("*IT")
+    }
+    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+}
+
+// Mesmo código-fonte de teste (src/test), separado só pelo sufixo da classe.
+// Não precisa de source set próprio — o filtro por nome já resolve.
+tasks.register('integrationTest', Test) {
+    description = 'Run integration tests.'
+    group = 'verification'
+    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+
+    // reaproveita os .class e o classpath compilados pelo source set de teste
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    // ordem, não dependência: se as duas rodarem, os unitários vêm primeiro —
+    // falha barata aparece antes de gastar tempo com a suíte que precisa de infra
+    shouldRunAfter test
+
+    useJUnitPlatform()
+
+    testLogging {
+        events "passed"
+    }
+
+    // o espelho do filtro do 'test': aqui só entram os *IT
+    filter {
+        includeTestsMatching "*IT"
+        excludeTestsMatching "*Test"
+    }
 }
 
 // Task 'asciidoctor': converte os arquivos .adoc em HTML (ou PDF, etc.)

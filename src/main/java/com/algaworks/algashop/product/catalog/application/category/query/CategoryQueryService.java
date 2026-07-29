@@ -1,6 +1,6 @@
 package com.algaworks.algashop.product.catalog.application.category.query;
 
-import com.algaworks.algashop.product.catalog.application.PageModel;
+import com.algaworks.algashop.product.catalog.application.util.PageModel;
 
 import java.util.UUID;
 

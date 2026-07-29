@@ -1,6 +1,6 @@
 package com.algaworks.algashop.product.catalog.contract.base;
 
-import com.algaworks.algashop.product.catalog.application.PageModel;
+import com.algaworks.algashop.product.catalog.application.util.PageModel;
 import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
 import com.algaworks.algashop.product.catalog.application.category.management.CategoryInput;
 import com.algaworks.algashop.product.catalog.application.category.management.CategoryManagementApplicationService;

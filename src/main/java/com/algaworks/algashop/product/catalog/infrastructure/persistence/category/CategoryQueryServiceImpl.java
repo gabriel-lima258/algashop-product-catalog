@@ -1,7 +1,6 @@
 package com.algaworks.algashop.product.catalog.infrastructure.persistence.category;
 
-import com.algaworks.algashop.product.catalog.application.PageModel;
-import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
+import com.algaworks.algashop.product.catalog.application.util.PageModel;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryDetailOutput;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryQueryService;
 import com.algaworks.algashop.product.catalog.application.util.Mapper;

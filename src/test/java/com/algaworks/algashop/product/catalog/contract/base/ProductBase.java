@@ -43,12 +43,13 @@
 
 package com.algaworks.algashop.product.catalog.contract.base;
 
-import com.algaworks.algashop.product.catalog.application.PageModel;
+import com.algaworks.algashop.product.catalog.application.util.PageModel;
 import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
 import com.algaworks.algashop.product.catalog.application.product.management.ProductInput;
 import com.algaworks.algashop.product.catalog.application.product.management.ProductManagementApplicationService;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductDetailOutput;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductDetailOutputTestDataBuilder;
+import com.algaworks.algashop.product.catalog.application.product.query.ProductFilter;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductQueryService;
 import com.algaworks.algashop.product.catalog.presentation.ProductController;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
@@ -188,15 +189,17 @@ public class ProductBase {
                 .update(Mockito.eq(invalidUpdateProductId), Mockito.any(ProductInput.class));
     }
 
+    // o contrato manda ?size=10&number=0 e afirma que a resposta devolve o mesmo size,
+    // entao o stub le o size do filtro recebido em vez de devolver valor fixo
     private void mockFilterProducts() {
         Mockito.when(productQueryService.filter(
-                Mockito.anyInt(), Mockito.anyInt()
+                Mockito.any(ProductFilter.class)
         )).then((answer) -> {
-            Integer size = answer.getArgument(0);
+            ProductFilter filter = answer.getArgument(0);
 
             return PageModel.<ProductDetailOutput>builder()
                     .number(0)
-                    .size(size)
+                    .size(filter.getSize())
                     .totalPages(1)
                     .totalElements(2)
                     .content(
