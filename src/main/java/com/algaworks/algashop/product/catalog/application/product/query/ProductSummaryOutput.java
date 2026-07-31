@@ -31,4 +31,7 @@ public class ProductSummaryOutput {
 
     private Integer quantityInStock;
     private Integer discountPercentageRounded;
+
+    // pontuação de buscas textuais, do mais relevante ao menor
+    private Float score;
 }

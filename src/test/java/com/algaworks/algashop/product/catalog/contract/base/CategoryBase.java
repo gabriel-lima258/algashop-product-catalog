@@ -6,6 +6,7 @@ import com.algaworks.algashop.product.catalog.application.category.management.Ca
 import com.algaworks.algashop.product.catalog.application.category.management.CategoryManagementApplicationService;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryDetailOutput;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryDetailOutputTestDataBuilder;
+import com.algaworks.algashop.product.catalog.application.category.query.CategoryFilter;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryQueryService;
 import com.algaworks.algashop.product.catalog.presentation.CategoryController;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
@@ -58,15 +59,17 @@ public class CategoryBase {
         mockInvalidDeletedProductId();
     }
 
+    // o contrato manda ?size=10&number=0 e afirma que a resposta devolve o mesmo size,
+    // entao o stub le o size do filtro recebido em vez de devolver valor fixo
     private void mockFilterCategories() {
         Mockito.when(categoryQueryService.filter(
-                Mockito.anyInt(), Mockito.anyInt()
+                Mockito.any(CategoryFilter.class)
         )).then((answer) -> {
-            Integer size = answer.getArgument(0);
+            CategoryFilter filter = answer.getArgument(0);
 
             return PageModel.<CategoryDetailOutput>builder()
                     .number(0)
-                    .size(size)
+                    .size(filter.getSize())
                     .totalPages(1)
                     .totalElements(2)
                     .content(

@@ -18,7 +18,7 @@ import java.util.UUID;
 @EqualsAndHashCode(callSuper = true)
 public class ProductFilter extends SortablePageFilter<ProductFilter.SortType> {
 
-    private String term;            // busca textual em name, brand e description
+    private String term;            // busca textual ($text) em name e description
     private Boolean hasDiscount;    // salePrice menor que regularPrice
     private Boolean enabled;
     private Boolean inStock;        // quantityInStock maior que zero
@@ -28,16 +28,15 @@ public class ProductFilter extends SortablePageFilter<ProductFilter.SortType> {
     private OffsetDateTime addedAtFrom; // intervalo de cadastro; mesma regra
     private OffsetDateTime addedAtTo;   // dos precos - extremos independentes
 
-    // ATENCAO: hoje devolvem constante e ignoram o que o cliente mandou -
-    // faltou o fallback (sortByProperty != null ? sortByProperty : ADDED_AT)
+    // usa o que o cliente mandou; se veio vazio, cai no default
     @Override
     public SortType getSortByPropertyOrDefault() {
-        return SortType.ADDED_AT;
+        return getSortByProperty() != null ? getSortByProperty() : SortType.ADDED_AT;
     }
 
     @Override
     public Sort.Direction getSortDirectionOrDefault() {
-        return Sort.Direction.ASC;
+        return getSortDirection() != null ? getSortDirection() : Sort.Direction.ASC;
     }
 
     // enum em vez de String solta: o cliente so consegue ordenar pelos campos

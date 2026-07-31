@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.BsonArray;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -85,10 +86,13 @@ public class DataLoader implements ApplicationRunner {
         }
 
         try {
-            // 6. autoDrop APAGA a colecao antes de inserir - garante base limpa
-            // no ambiente de estudo, mas destroi dados se ligado onde nao devia
+            // 6. autoDrop ESVAZIA a colecao antes de inserir - garante base limpa
+            // no ambiente de estudo, mas destroi dados se ligado onde nao devia.
+            // deleteMany({}) e NAO drop(): com auto-index-creation ligado os indices sao
+            // criados quando o mapping context sobe, ANTES deste ApplicationRunner rodar.
+            // drop() levaria a colecao e os indices recem-criados junto; deleteMany preserva
             if (Boolean.TRUE.equals(properties.getAutoDrop())) {
-                mongoOperations.getCollection(collectionName).drop();
+                mongoOperations.getCollection(collectionName).deleteMany(new BsonDocument());
             }
 
             return mongoOperations.insert(mongoDocs, collectionName).size();

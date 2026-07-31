@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationExpressionCr
 import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.TextCriteria;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,13 +35,6 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
     // criteria query
     private final MongoOperations mongoOperations;
-
-    // regex de termos - o %s e placeholder do String.format, nao do Mongo.
-    // (?i) = ignora maiusculas/minusculas.
-    // regular: so casa a palavra inteira - "note" NAO acha "notebook"
-    private static final String regularRegex = "(?i)(?<= |^)%s(?= |$)"; //%s é do java
-    // flexible: casa em qualquer parte do texto - "note" acha "notebook"
-    private static final String flexibleRegex = "(?i)%s"; //%s é do java
 
     @Override
     public ProductDetailOutput findById(UUID productId) {
@@ -86,8 +80,13 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 .build();
     }
 
-    // ordenacao: hoje sempre o default do ProductFilter (addedAt ASC)
+    // ordenacao: o que o cliente pediu ou o default do ProductFilter (addedAt ASC)
     private Sort sortWith(ProductFilter filter) {
+        // busca textual ignora o sort pedido e ordena por relevancia. "score" e o campo
+        // @TextScore do Product, e por isso o Spring Data traduz para $meta: "textScore"
+        if (StringUtils.isNotBlank(filter.getTerm())) {
+            return Sort.by("score");
+        }
         return Sort.by(filter.getSortDirectionOrDefault(),
                 filter.getSortByPropertyOrDefault().getPropertyName());
     }
@@ -172,17 +171,13 @@ public class ProductQueryServiceImpl implements ProductQueryService {
             ));
         }
 
-        // busca textual por regex -> { $or: [ {name: /termo/i}, {brand: ...}, {description: ...} ] }.
-        // o orOperator agrupa os tres num criteria so; se fossem tres addCriteria virariam AND
+        // term -> { $text: { $search: "..." } }, servido pelo indice de texto (@TextIndexed
+        // em name e description). Substituiu o $or de tres regex, que varria a colecao inteira.
+        // o que se ganhou: usa indice, faz stemming e nao ha risco de ReDoS.
+        // o que se perdeu: casa palavra inteira ("note" nao acha "notebook", entao busca
+        // enquanto o usuario digita deixou de funcionar) e brand ficou de fora da busca
         if (StringUtils.isNotBlank(filter.getTerm())) {
-            String regexExpression = String.format(flexibleRegex, filter.getTerm());
-            query.addCriteria(
-                    new Criteria().orOperator(
-                            Criteria.where("name").regex(regexExpression),
-                            Criteria.where("brand").regex(regexExpression),
-                            Criteria.where("description").regex(regexExpression)
-                    )
-            );
+            query.addCriteria(TextCriteria.forDefaultLanguage().matching(filter.getTerm()));
         }
 
         return query;

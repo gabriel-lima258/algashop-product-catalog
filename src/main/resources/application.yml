@@ -7,6 +7,17 @@ spring:
     # Spring Boot 4: a propriedade e spring.mongodb.uri (era spring.data.mongodb.uri no 3.x).
     # authSource=admin e obrigatorio - o usuario root vive no banco admin, os dados em product_catalog
     uri: mongodb://root:algashop@localhost:27017/product_catalog?authSource=admin
+  # cria na subida os indices declarados por anotacao no agregado (@Indexed,
+  # @CompoundIndex, @TextIndexed). Sem isso as anotacoes nao fazem nada.
+  # Repare no prefixo: no Boot 4 a CONEXAO virou spring.mongodb.uri, mas esta
+  # propriedade continua em spring.data.mongodb - errar o prefixo nao da erro,
+  # so faz nenhum indice ser criado.
+  # ATENCAO: o Spring desaconselha em producao - a criacao roda na inicializacao
+  # e trava a aplicacao enquanto o indice e construido. La o indice e criado
+  # por fora, em janela controlada
+  data:
+    mongodb:
+      auto-index-creation: true
 
 # DEBUG do driver: mostra no console cada comando enviado ao Mongo.
 # Otimo para conferir a query gerada pelos Criteria; barulhento demais para deixar ligado sempre
@@ -28,3 +39,8 @@ algashop:
         collection: categories
       - location: db/testdata/products.json
         collection: products
+      # massa de 560 mil produtos, para o ganho do indice ficar mensuravel no explain -
+      # com products.json (dezenas de documentos) varredura e indice empatam.
+      # descomente NO LUGAR da entrada acima; a inicializacao passa a demorar bem mais
+      # - location: db/testdata/products-large.json
+      #   collection: products
