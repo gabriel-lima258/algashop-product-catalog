@@ -1,9 +1,12 @@
-package com.algaworks.algashop.product.catalog.infrastructure.util;
+package com.algaworks.algashop.product.catalog.application.util;
 
 import java.text.Normalizer;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+// funcao pura sobre String, sem nada de infraestrutura - por isso mora em application/util:
+// o ProductSummaryOutput usa isso no getSlug(), e DTO de application nao deve olhar para
+// infrastructure, que e a camada de baixo
 public class Slugfier {
 
     private Slugfier() {

@@ -5,10 +5,12 @@ import com.algaworks.algashop.product.catalog.domain.DomainEntityNotFoundExcepti
 import com.algaworks.algashop.product.catalog.domain.DomainException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.*;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -39,13 +41,27 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, String> fieldErrors = ex.getBindingResult().getAllErrors().stream().collect(
                 Collectors.toMap(
                         objectError -> ((FieldError) objectError).getField(),
-                        objectError -> messageSource.getMessage(objectError, LocaleContextHolder.getLocale())
+                        this::messageOf
                 )
         );
 
         problemDetail.setProperty("fields", fieldErrors);
 
         return super.handleExceptionInternal(ex, problemDetail,  headers, status, request);
+    }
+
+    // Dois tipos de erro chegam aqui e sao resolvidos de formas diferentes:
+    //
+    // - CONVERSAO (o texto da query string nao vira o tipo do campo): a mensagem do
+    //   framework vaza nome de classe e pacote Java na resposta publica. A causa raiz,
+    //   por outro lado, e a excecao do proprio conversor, que ja diz o que era esperado -
+    //   e monta a lista a partir do enum, sem duplicar valores em lugar nenhum.
+    // - VALIDACAO (Bean Validation): segue pelo MessageSource, como sempre.
+    private String messageOf(ObjectError objectError) {
+        if (objectError.contains(TypeMismatchException.class)) {
+            return objectError.unwrap(TypeMismatchException.class).getMostSpecificCause().getMessage();
+        }
+        return messageSource.getMessage(objectError, LocaleContextHolder.getLocale());
     }
 
     // quando temos duas exception usando Exception

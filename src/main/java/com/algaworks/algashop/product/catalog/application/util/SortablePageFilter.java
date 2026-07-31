@@ -10,11 +10,13 @@ import org.springframework.data.domain.Sort;
 // O tipo genérico <T> representa o enum de propriedades permitidas para ordenação,
 // garantindo que cada filtro concreto defina suas próprias opções de sort válidas (type-safe).
 // Hierarquia: PageFilter (page, size) → SortablePageFilter (sortByProperty, sortDirection) → filtro concreto (campos de busca)
+// O bound <T extends Enum<T>> fecha a porta para o T virar String, que era o que a
+// allowlist de campos ordenaveis existia para impedir.
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public abstract class SortablePageFilter<T> extends PageFilter {
+public abstract class SortablePageFilter<T extends Enum<T>> extends PageFilter {
     private T sortByProperty;
     private Sort.Direction sortDirection;
 

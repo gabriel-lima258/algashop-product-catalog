@@ -40,7 +40,9 @@ public class ProductFilter extends SortablePageFilter<ProductFilter.SortType> {
     }
 
     // enum em vez de String solta: o cliente so consegue ordenar pelos campos
-    // listados aqui, entao nao da pra pedir sort por campo inexistente
+    // listados aqui, entao nao da pra pedir sort por campo inexistente.
+    // cada constante tem DOIS nomes - SALE_PRICE, o do Java, e salePrice, o do campo no
+    // documento. o cliente manda o segundo, e quem traduz e o WebConfig
     @Getter
     @RequiredArgsConstructor
     public enum SortType {

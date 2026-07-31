@@ -1,5 +1,6 @@
 package com.algaworks.algashop.product.catalog.application.product.query;
 
+import com.algaworks.algashop.product.catalog.application.util.Slugfier;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +10,10 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+// Destino DIRETO do $project do aggregation pipeline: o Mongo devolve os documentos ja
+// com estes nomes de campo, sem ModelMapper no meio. Por isso o TypeMap deste DTO saiu
+// do ModelMapperConfig - quem "mapeia" agora e a projecao, do lado do banco.
+// O ProductDetailOutput continua no caminho antigo (find + mapper), de proposito.
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,11 +27,11 @@ public class ProductSummaryOutput {
     private BigDecimal salePrice;
     private Boolean inStock;
     private Boolean enabled;
+    // preenchido pelo $lookup + $unwind do pipeline, nao pelo @DocumentReference
     private CategoryMinimalOutput category;
 
     private String shortDescription;
 
-    private String slug;
     private Boolean hasDiscount;
 
     private Integer quantityInStock;
@@ -34,4 +39,12 @@ public class ProductSummaryOutput {
 
     // pontuação de buscas textuais, do mais relevante ao menor
     private Float score;
+
+    // slug derivado em Java, na hora de serializar - o Jackson chama este getter e publica
+    // o campo "slug" no JSON, sem ele existir na classe nem no documento.
+    // ficou de fora do $project de proposito: tirar acento no Mongo exigiria uma cadeia de
+    // $replaceAll por caractere, e aqui e uma linha (ver Slugfier)
+    public String getSlug() {
+        return Slugfier.slugify(this.getName());
+    }
 }
