@@ -6,6 +6,7 @@ import com.algaworks.algashop.product.catalog.domain.util.IdGenerator;
 import io.micrometer.common.util.StringUtils;
 import lombok.*;
 import org.springframework.data.annotation.*;
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.TextIndexed;
@@ -22,26 +23,45 @@ import java.util.UUID;
 
 @Document(collection = "products")
 @Getter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+// callSuper = false explicito: o Product agora estende AbstractAggregateRoot, e sem isso
+// o Lombok avisa. A identidade e o id e mais nada - a lista de eventos pendentes da
+// superclasse e estado transitorio, e dois produtos de mesmo id sao o mesmo produto
+// independentemente do que esteja enfileirado neles
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 // construtor sem argumentos protegido: o Spring Data instancia por reflexao mesmo assim,
 // mas ninguem de fora consegue criar um Product "vazio" desviando do builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 // Indices compostos da listagem. A ordem dos campos segue a regra ESR:
-// Equality (categoryId, enabled) -> Sort/Range (salePrice, addedAt).
+// Equality (category.id, enabled) -> Sort/Range (salePrice, addedAt).
 // Sao dois porque um indice so consegue servir bem UMA dessas pontas por consulta:
 // o primeiro cobre a faixa de preco, o segundo cobre a ordenacao por data.
 // O -1 do addedAt e do mais recente ao mais antigo - o Mongo percorre o indice
 // nos dois sentidos, entao ele atende ASC tambem.
 // partialFilter: so indexa documento ativo, o que deixa o indice bem menor.
 // ATENCAO: em troca, o Mongo so escolhe esse indice quando a consulta manda
-// enabled: true EXPLICITO - cliente que omite o filtro cai em varredura
+// enabled: true EXPLICITO - cliente que omite o filtro cai em varredura.
+//
+// ATENCAO 2: aqui se escreve 'category.id', mas o indice NASCE como 'category._id'.
+// Quem traduz e o mapping context do Spring Data: a propriedade chamada id de um objeto
+// embutido vira _id no documento, e a resolucao do path vale tambem para a def do
+// @CompoundIndex e para os Criteria. Conferir com db.products.getIndexes() -
+// ver docs/02-persistencia/desnormalizacao-mongo.md
 @CompoundIndex(name = "pidx_product_by_category_enabledTrue_salePrice",
-        def = "{'categoryId': 1, 'enabled': 1, 'salePrice': 1}",
+        def = "{'category.id': 1, 'enabled': 1, 'salePrice': 1}",
         partialFilter = "{'enabled': true}")
 @CompoundIndex(name = "pidx_product_by_category_enabledTrue_addedAt",
-        def = "{'categoryId': 1, 'enabled': 1, 'addedAt': -1}",
+        def = "{'category.id': 1, 'enabled': 1, 'addedAt': -1}",
         partialFilter = "{'enabled': true}")
-public class Product {
+// AbstractAggregateRoot: da ao agregado um registerEvent() e uma lista @Transient de
+// eventos pendentes (transiente, entao nao vai para o documento).
+// ATENCAO ao momento da publicacao: quem publica NAO e o registerEvent, e sim o
+// EventPublishingRepositoryProxyPostProcessor do Spring Data, DEPOIS de um save() feito
+// pelo ProductRepository - e ele limpa a lista em seguida.
+// Consequencia pratica: agregado que nunca passa pelo repositorio nao publica nada.
+// Escrita por MongoTemplate/MongoOperations (o updateMulti do ProductCategoryUpdater,
+// por exemplo) e invisivel para este mecanismo.
+// Ver docs/01-arquitetura-design/eventos-e-listeners.md
+public class Product extends AbstractAggregateRoot<Product> {
 
     @Id
     @EqualsAndHashCode.Include
@@ -86,10 +106,23 @@ public class Product {
     @LastModifiedBy
     private UUID lastModifiedByUserId;
 
-    // referencia de relação de outra classe
-    @DocumentReference
-    @Field(name = "categoryId")
-    private Category category;
+    // JEITO 1 (normalizado): a categoria era uma REFERENCIA - o documento guardava so o
+    // categoryId e quem quisesse o nome dela fazia uma leitura a mais (o N+1), ou um
+    // $lookup no pipeline. Mantido comentado de proposito, como referencia de estudo;
+    // a comparacao completa dos dois jeitos esta em
+    // docs/02-persistencia/desnormalizacao-mongo.md
+//    @DocumentReference
+//    @Field(name = "categoryId")
+//    private UUID categoryId;
+
+    // JEITO 2 (desnormalizado, o atual): a categoria vira um value object EMBUTIDO no
+    // proprio documento de produto - { category: { _id, name, enabled } }. A listagem
+    // passa a ler nome e situacao da categoria sem tocar na colecao categories: nao ha
+    // N+1 nem join a resolver.
+    // O preco: e uma COPIA, e copia envelhece. Renomear uma categoria agora exige
+    // reescrever todos os produtos dela - e quem faz isso e o CategoryEventListener,
+    // de forma assincrona (consistencia eventual)
+    private ProductCategory category;
 
     private Integer discountPercentageRounded;
 
@@ -110,9 +143,14 @@ public class Product {
         this.setBrand(brand);
         this.setDescription(description);
         this.setEnabled(enabled);
+        // valida ANTES de aplicar: os setters de preco sao privados e passaram a ser
+        // meros aplicadores de estado, entao a regra do PAR mora aqui e no changePrice
+        validatePrices(regularPrice, salePrice);
         this.setRegularPrice(regularPrice);
         this.setSalePrice(salePrice);
         this.setCategory(category);
+
+        registerProductAddedEvent();
     }
 
     public void setName(String name) {
@@ -133,7 +171,7 @@ public class Product {
         this.description = description;
     }
 
-    public void setRegularPrice(BigDecimal regularPrice) {
+    private void setRegularPrice(BigDecimal regularPrice) {
         Objects.requireNonNull(regularPrice);
 
         // se o numero for negativo
@@ -141,36 +179,38 @@ public class Product {
             throw new IllegalArgumentException();
         }
 
-        if (this.salePrice == null) {
-            this.salePrice = regularPrice;
-        } else if (regularPrice.compareTo(this.salePrice) < 0) {
-            throw new DomainException("Sale price cannot be greater than regular price");
-        }
-
         this.regularPrice = regularPrice;
         this.calculateDiscountPercentage();
     }
 
-    public void setSalePrice(BigDecimal salePrice) {
+    private void setSalePrice(BigDecimal salePrice) {
         Objects.requireNonNull(regularPrice);
 
         if (salePrice.signum() == -1) {
             throw new IllegalArgumentException();
         }
 
-        if (this.regularPrice == null) {
-            this.regularPrice = salePrice;
-        } else if (this.regularPrice.compareTo(salePrice) < 0) {
-            throw new DomainException("Sale price cannot be greater than regular price");
-        }
-
         this.salePrice = salePrice;
         this.calculateDiscountPercentage();
     }
 
+    // emite evento so quando a situacao MUDA, e a comparacao e com o valor anterior.
+    // as duas guardas nao sao decoracao:
+    // - wasEnabled != null distingue "produto sendo criado" de "produto sendo alterado".
+    //   sem ela, todo produto nascido com enabled=true emitiria um Listed logo apos o
+    //   ProductAddedEvent, dizendo que foi listado algo que acabou de existir
+    // - comparar antes/depois evita evento em chamada idempotente: mandar disable() num
+    //   produto ja inativo nao aconteceu nada, entao nao ha o que anunciar
     public void setEnabled(Boolean enabled) {
         Objects.requireNonNull(enabled);
+        Boolean wasEnabled  = this.enabled;
         this.enabled = enabled;
+
+        if (wasEnabled != null && wasEnabled && !this.getEnabled()) {
+            registerDelistedProductEvent();
+        } else if (wasEnabled != null && !wasEnabled && this.getEnabled()) {
+            registerListedProductEvent();
+        }
     }
 
     public void disable() {
@@ -186,9 +226,12 @@ public class Product {
         this.id = id;
     }
 
+    // recebe a Category (o agregado de verdade, carregado pelo application service) e
+    // guarda so a COPIA reduzida. e aqui que a desnormalizacao acontece: a partir deste
+    // ponto o Product nao depende mais da colecao categories para se descrever
     public void setCategory(Category category) {
         Objects.requireNonNull(category);
-        this.category = category;
+        this.category = ProductCategory.of(category);
     }
 
     public boolean isInStock() {
@@ -197,6 +240,41 @@ public class Product {
 
     public boolean getHasDiscount() {
         return getDiscountPercentageRounded() != null && getDiscountPercentageRounded() > 0;
+    }
+
+    // operacao de negocio que substituiu os dois setters publicos de preco. existe porque
+    // os precos NAO sao independentes: a regra so pode ser avaliada com o par completo em
+    // maos, e quem chamasse setSalePrice sozinho conseguia deixar o agregado invalido.
+    // tambem e o unico lugar que sabe distinguir "mudou de preco" de "entrou em promocao",
+    // que sao dois eventos diferentes
+    public void changePrice(BigDecimal regularPrice, BigDecimal salePrice) {
+        Objects.requireNonNull(regularPrice);
+        Objects.requireNonNull(salePrice);
+
+        BigDecimal oldRegularPrice = this.regularPrice;
+        BigDecimal oldSalePrice = this.salePrice;
+
+        boolean wasOnSale = getHasDiscount();
+
+        // valida o par NOVO contra ele mesmo. comparar o regularPrice novo com o salePrice
+        // ANTIGO dava errado nas duas direcoes: rejeitava baixar os dois precos juntos
+        // (3000/2789 -> 2500/2400) e deixava passar 3000/5000, que grava desconto negativo
+        validatePrices(regularPrice, salePrice);
+
+        setRegularPrice(regularPrice);
+        setSalePrice(salePrice);
+
+        // salvar o mesmo preco de novo nao e um fato: sai sem registrar nada.
+        // sem esta guarda, um PUT repetido geraria uma enxurrada de PriceChanged identicos
+        if (pricesDidNotChange(oldRegularPrice, oldSalePrice)) {
+            return;
+        }
+
+        registerPriceChangedEvent(oldRegularPrice, oldSalePrice);
+
+        if (isNewlyOnSale(wasOnSale)) {
+            registerProductPlacedOnSaleEvent();
+        }
     }
 
     private void setQuantityInStock(Integer quantityInStock) {
@@ -221,4 +299,72 @@ public class Product {
                 .setScale(0, RoundingMode.HALF_DOWN)
                 .intValue();
     }
+
+    // unico lugar onde vive a regra "promocao nao pode custar mais que o preco cheio".
+    // e chamado pelo construtor e pelo changePrice, sempre sobre o par completo -
+    // um setter sozinho nao consegue avaliar essa regra, porque so enxerga metade dela
+    private void validatePrices(BigDecimal regularPrice, BigDecimal salePrice) {
+        if (salePrice.compareTo(regularPrice) > 0) {
+            throw new DomainException("Sale price cannot be greater than regular price");
+        }
+    }
+
+    private boolean isNewlyOnSale(boolean wasOnSale) {
+        return getHasDiscount() && !wasOnSale;
+    }
+
+    private boolean pricesDidNotChange(BigDecimal oldRegularPrice, BigDecimal oldSalePrice) {
+        return Objects.equals(this.regularPrice, oldRegularPrice) && Objects.equals(this.salePrice, oldSalePrice);
+    }
+
+    // Os cinco registradores abaixo so ENFILEIRAM o evento. Nada sai daqui ate alguem
+    // chamar productRepository.save(this) - ver o comentario do topo da classe.
+    // Sao privados e chamados de dentro das operacoes de negocio de proposito: quem decide
+    // que houve um fato relevante e o agregado, nao quem o manipula de fora
+    private void registerProductAddedEvent() {
+        super.registerEvent(
+                ProductAddedEvent.builder()
+                        .productId(this.id)
+                        .build()
+        );
+    }
+
+    private void registerPriceChangedEvent(BigDecimal oldRegularPrice, BigDecimal oldSalePrice) {
+        super.registerEvent(
+                ProductPriceChangedEvent.builder()
+                        .productId(this.id)
+                        .newRegularPrice(this.regularPrice)
+                        .newSalePrice(this.salePrice)
+                        .oldRegularPrice(oldRegularPrice)
+                        .oldSalePrice(oldSalePrice)
+                        .build()
+        );
+    }
+
+    private void registerProductPlacedOnSaleEvent() {
+        super.registerEvent(
+                ProductPlacedOnSaleEvent.builder()
+                        .productId(this.id)
+                        .regularPrice(this.regularPrice)
+                        .salePrice(this.salePrice)
+                        .build()
+        );
+    }
+
+    private void registerListedProductEvent() {
+        super.registerEvent(
+                ProductListedEvent.builder()
+                        .productId(this.id)
+                        .build()
+        );
+    }
+
+    private void registerDelistedProductEvent() {
+        super.registerEvent(
+                ProductDelistedEvent.builder()
+                        .productId(this.id)
+                        .build()
+        );
+    }
+
 }

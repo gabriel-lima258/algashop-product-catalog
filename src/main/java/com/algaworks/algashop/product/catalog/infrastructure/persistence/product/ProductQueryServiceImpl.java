@@ -44,9 +44,14 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
     // A listagem NAO usa find() + ModelMapper como o findById aqui em cima: ela monta um
     // aggregation pipeline, uma esteira de estagios em que a saida de um e a entrada do
-    // proximo. Foi o que permitiu trazer o nome da categoria numa ida so ($lookup, no lugar
-    // do N+1 do @DocumentReference) e calcular os campos derivados no proprio banco.
-    // Os dois jeitos convivem de proposito - o simples continua no findById e nas categorias.
+    // proximo. Os dois jeitos convivem de proposito - o simples continua no findById e
+    // nas categorias.
+    //
+    // ATENCAO ao que sobrou: o pipeline nasceu para juntar a colecao de categorias com
+    // $lookup e acabar com o N+1 do @DocumentReference. Esse motivo ACABOU - a categoria
+    // hoje esta embutida no proprio documento, entao nao ha nada a juntar. O que ainda
+    // justifica o pipeline e so o $project la embaixo, que calcula os campos derivados no
+    // servidor. Ver docs/02-persistencia/desnormalizacao-mongo.md
     @Override
     public PageModel<ProductSummaryOutput> filter(ProductFilter filter) {
         // 1. monta os filtros. Optional e nao Criteria direto: um new Criteria() vazio vira
@@ -55,9 +60,10 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         Optional<TextCriteria> textCriteria = buildTextCriteria(filter);
 
         // 2. conta o total com uma Query COMUM, fora do pipeline - mesmos filtros, sem os
-        // estagios de join/projecao/paginacao.
-        // ATENCAO: o unwind la embaixo e inner join, entao produto de categoria orfa entra
-        // nesta contagem e some do resultado - as duas contas podem divergir
+        // estagios de projecao e paginacao.
+        // Esta contagem ja divergiu do resultado: enquanto havia $unwind (inner join),
+        // produto de categoria orfa entrava na conta e sumia da pagina. Com a categoria
+        // embutida nao ha mais join, e as duas contas nao tem mais como discordar
         Query query = new Query();
         textCriteria.ifPresent(query::addCriteria);
         criteria.ifPresent(query::addCriteria);
@@ -96,16 +102,23 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
         PageRequest pageRequest = PageRequest.of(filter.getPage(), filter.getSize());
 
+        // JEITO 1 (normalizado), mantido comentado como referencia de estudo:
         // lookup = join com a colecao categories pelo categoryId; unwind desembrulha o array
-        // de um elemento que o lookup produz, virando um objeto so.
-        // e o fim do N+1: antes cada produto que tocasse getCategory() disparava uma leitura.
-        // ATENCAO: unwind sem preserveNullAndEmptyArrays e INNER JOIN - produto cujo categoryId
-        // nao resolve simplesmente desaparece do resultado.
-        // ATENCAO 2: a ordem cobra caro - $lookup e $project rodam sobre TODOS os documentos
-        // filtrados, nao sobre os 15 da pagina. paginar antes de juntar seria bem mais barato
+        // de um elemento que o lookup produz, virando um objeto so. Era o que acabava com o
+        // N+1 do @DocumentReference - cada produto que tocasse getCategory() lia de novo.
+        // Tinha duas pegadinhas: unwind sem preserveNullAndEmptyArrays e INNER JOIN, entao
+        // produto de categoria orfa sumia do resultado sem aviso; e o join rodava sobre
+        // TODOS os documentos filtrados, nao sobre os 15 da pagina.
+        // Os dois estagios foram aposentados pela desnormalizacao, nao por serem ruins:
+        // sem categoria em outra colecao, nao ha o que juntar. Comparacao completa em
+        // docs/02-persistencia/desnormalizacao-mongo.md
+        //
+        // ATENCAO ao que continua valendo: o $project abaixo ainda roda sobre todos os
+        // documentos filtrados, antes do $skip/$limit. Projetar depois de paginar seria
+        // mais barato - segue como pendencia registrada
         operations.addAll(Arrays.asList(
-                lookup("categories", "categoryId", "_id", "category"),
-                unwind("$category"),
+//                lookup("categories", "categoryId", "_id", "category"),
+//                unwind("$category"),
                 sort(sortWith(filter)),
                 projectionForSummary(),
                 skip(pageRequest.getOffset()),
@@ -204,11 +217,15 @@ public class ProductQueryServiceImpl implements ProductQueryService {
             }
         }
 
-        // categoriesId -> { "categoryId": { $in: [...] } }.
-        // o campo procurado e o categoryId gravado pelo @DocumentReference do Product,
-        // nao a categoria inteira - por isso da pra filtrar sem carregar nenhuma Category
+        // categoriesId -> { "category._id": { $in: [...] } }.
+        // filtrar por categoria nao custa leitura extra - o dado ja esta no documento -
+        // e isso nunca foi tao verdade quanto agora: antes o campo era o categoryId
+        // gravado pelo @DocumentReference, hoje e o id da copia embutida.
+        // ATENCAO: aqui se escreve "category.id" e o Mongo recebe "category._id" - o
+        // QueryMapper resolve o path pelo mapping context, a mesma traducao que acontece
+        // na def do @CompoundIndex do Product
         if (filter.getCategoriesId() != null && filter.getCategoriesId().length > 0) {
-            criterias.add(Criteria.where("categoryId").in(
+            criterias.add(Criteria.where("category.id").in(
                     (Object[]) filter.getCategoriesId()
             ));
         }
@@ -266,9 +283,12 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 .and("quantityInStock").as("quantityInStock")
                 .and("discountPercentageRounded").as("discountPercentageRounded")
                 .and("score").as("score")
-                // vem do $lookup; sem ele estes dois campos nao existiriam no documento
+                // vem do proprio documento, do subdocumento category embutido. ate a
+                // desnormalizacao estes campos so existiam depois do $lookup - hoje sao
+                // repasse puro, como qualquer outro campo cru acima
                 .and("category._id").as("category._id")
                 .and("category.name").as("category.name")
+                .and("category.enabled").as("category.enabled")
 
                 // campos derivados: a mesma regra do agregado, reescrita em operador do Mongo
                 .andExpression("salePrice < regularPrice").as("hasDiscount")

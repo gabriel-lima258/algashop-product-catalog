@@ -10,12 +10,16 @@
     "salePrice": { "$numberDecimal": "2789.00" },
     "enabled": true,
     "discountPercentageRounded": 7,
-    "categoryId": { "$uuid": "e0c4271d-0016-4a42-82fe-bf695a9fb9b8" },
     "quantityInStock": 50,
     "description": "15-inch laptop, Intel Core i9, 32GB RAM, 1TB SSD, NVIDIA GeForce RTX 3080",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "e0c4271d-0016-4a42-82fe-bf695a9fb9b8" },
+      "name": "Laptops",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "2eea613a-3a11-46dd-95ee-2678c295559e" },
@@ -28,12 +32,16 @@
     "salePrice": { "$numberDecimal": "5000.00" },
     "enabled": false,
     "discountPercentageRounded": 0,
-    "categoryId": { "$uuid": "e0c4271d-0016-4a42-82fe-bf695a9fb9b8" },
     "quantityInStock": 11,
     "description": "Gaming laptop, AMD Ryzen 9, 64GB RAM, 2TB NVMe SSD, NVIDIA GeForce RTX 3090",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "e0c4271d-0016-4a42-82fe-bf695a9fb9b8" },
+      "name": "Laptops",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "abdc585c-9153-49f0-b1f9-9f01cca6901c" },
@@ -46,12 +54,16 @@
     "salePrice": { "$numberDecimal": "6599.99" },
     "enabled": true,
     "discountPercentageRounded": 6,
-    "categoryId": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
     "quantityInStock": 6,
     "description": "Liquid-cooled gaming PC, AMD Ryzen 7, 32GB RGB RAM, 1TB NVMe SSD, NVIDIA GeForce GTX 3070",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
+      "name": "Desktops",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "a8ce5aa8-0cbb-4a68-92e7-d43ec7a53b49" },
@@ -64,12 +76,16 @@
     "salePrice": { "$numberDecimal": "10000.00" },
     "enabled": false,
     "discountPercentageRounded": 0,
-    "categoryId": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
     "quantityInStock": 0,
     "description": "Tower server, AMD EPYC, 256GB ECC RAM, 8TB SATA HDD",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
+      "name": "Desktops",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "b573779c-7276-4b39-afc3-3827a7dd5fc3" },
@@ -82,12 +98,16 @@
     "salePrice": { "$numberDecimal": "3000.00" },
     "enabled": true,
     "discountPercentageRounded": 0,
-    "categoryId": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
     "quantityInStock": 0,
     "description": "Workstation tower, Celeron D processors, 4GB RAM, HD 100GB",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
+      "name": "Desktops",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "19274f99-e0d2-40b1-9b3a-912cb0982f11" },
@@ -100,12 +120,16 @@
     "salePrice": { "$numberDecimal": "300.00" },
     "enabled": true,
     "discountPercentageRounded": 0,
-    "categoryId": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
     "quantityInStock": 50,
     "description": "DDR4 4000Mhz for laptop",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
+      "name": "Hardware",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "8fd9f73a-b0b6-4a4c-96b1-e1ba36602333" },
@@ -118,12 +142,16 @@
     "salePrice": { "$numberDecimal": "439.00" },
     "enabled": true,
     "discountPercentageRounded": 4,
-    "categoryId": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
     "quantityInStock": 100,
     "description": "DDR5 5899Mhz \n3x8GB Pack ",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
+      "name": "Hardware",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "3a40e8a1-ec61-434b-92e5-b4dae61eddd0" },
@@ -136,12 +164,16 @@
     "salePrice": { "$numberDecimal": "455.00" },
     "enabled": true,
     "discountPercentageRounded": 0,
-    "categoryId": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
     "quantityInStock": 10,
     "description": "DDR5 5899Mhz 3x8GB",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
+      "name": "Hardware",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "7439c2b9-f14c-452d-86f4-505d211e4974" },
@@ -154,12 +186,16 @@
     "salePrice": { "$numberDecimal": "455.00" },
     "enabled": true,
     "discountPercentageRounded": 0,
-    "categoryId": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
     "quantityInStock": 554,
     "description": "DDR5 5899Mhz 3x8GB",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
+      "name": "Hardware",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "3b3ea346-959e-4844-ab32-62455802cb63" },
@@ -172,12 +208,16 @@
     "salePrice": { "$numberDecimal": "2455.00" },
     "enabled": true,
     "discountPercentageRounded": 17,
-    "categoryId": { "$uuid": "d2468e17-35f2-46e7-b51d-24c01315ab29" },
     "quantityInStock": 88,
     "description": "Andruuid 12\nStorage 30GB\nRAM 4GB\n4G",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "d2468e17-35f2-46e7-b51d-24c01315ab29" },
+      "name": "Cell Phones",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "a5638e2f-1b9a-4265-88fb-634dd5f5fe5d" },
@@ -190,12 +230,16 @@
     "salePrice": { "$numberDecimal": "1344.00" },
     "enabled": true,
     "discountPercentageRounded": 0,
-    "categoryId": { "$uuid": "d2468e17-35f2-46e7-b51d-24c01315ab29" },
     "quantityInStock": 55,
     "description": "Andruuid 8 \n3G\nStorage 10GB\nRAM 1GB",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "d2468e17-35f2-46e7-b51d-24c01315ab29" },
+      "name": "Cell Phones",
+      "enabled": true
+    }
   },
   {
     "_id": { "$uuid": "5805e415-1ca0-45e2-9764-6fd5d1eb2339" },
@@ -208,11 +252,15 @@
     "salePrice": { "$numberDecimal": "5000.00" },
     "enabled": true,
     "discountPercentageRounded": 12,
-    "categoryId": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
     "quantityInStock": 155,
     "description": "27-inch 4K monitor, IPS panel, 60Hz refresh rate, HDR support",
     "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
     "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
-    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" }
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
+      "name": "Desktops",
+      "enabled": true
+    }
   }
 ]

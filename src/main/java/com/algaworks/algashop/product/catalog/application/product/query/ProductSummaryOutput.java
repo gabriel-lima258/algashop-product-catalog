@@ -27,7 +27,8 @@ public class ProductSummaryOutput {
     private BigDecimal salePrice;
     private Boolean inStock;
     private Boolean enabled;
-    // preenchido pelo $lookup + $unwind do pipeline, nao pelo @DocumentReference
+    // vem embutido no proprio documento de produto. ja foi preenchido pelo $lookup +
+    // $unwind do pipeline, e antes disso pelo @DocumentReference, ao custo de um N+1
     private CategoryMinimalOutput category;
 
     private String shortDescription;
