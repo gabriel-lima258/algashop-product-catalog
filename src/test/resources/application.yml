@@ -1,0 +1,15 @@
+# Este arquivo SOMBREIA o src/main/resources/application.yml durante os testes: os dois
+# tem o mesmo nome, e o classpath de teste vem primeiro. E o que garante que nenhuma
+# suite herde por acidente a configuracao de desenvolvimento - em especial a URI do banco.
+#
+# O grupo abaixo faz o perfil "test" ligar os perfis "base" e "test-env" juntos:
+#   base     -> tudo que e igual em qualquer ambiente (nome da app, indices, carga)
+#   test-env -> so o que muda por ambiente (a URI, apontando para o banco de TESTE)
+# Separados assim, apontar a suite para outro Mongo e trocar um arquivo so
+spring:
+  profiles:
+    active: test
+    group:
+      test:
+        - base
+        - test-env

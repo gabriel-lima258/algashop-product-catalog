@@ -1,0 +1,31 @@
+# O que vale em qualquer ambiente de teste. A URI do Mongo NAO esta aqui de proposito -
+# ela e a unica coisa que muda por ambiente, e mora no application-test-env.yaml.
+#
+# A carga fica ligada com auto-drop: true porque em teste isso deixa de ser perigoso e
+# vira exatamente o que se quer - cada execucao comeca do mesmo estado conhecido. O
+# QuantityInStockAdjustmentIT ainda chama dataLoader.run() no @BeforeEach, para isolar um
+# cenario do outro dentro da mesma classe
+server.port: 8083
+
+spring:
+  application:
+    name: product-catalog
+  data:
+    mongodb:
+      auto-index-creation: true
+
+logging:
+  level:
+    org.mongodb.driver.protocol.command: DEBUG
+    org.mongodb.driver.protocol.query: DEBUG
+    org.mongodb.driver.connection: DEBUG
+
+algashop:
+  data-load:
+    enabled: true
+    auto-drop: true
+    sources:
+      - location: db/testdata/categories.json
+        collection: categories
+      - location: db/testdata/products.json
+        collection: products

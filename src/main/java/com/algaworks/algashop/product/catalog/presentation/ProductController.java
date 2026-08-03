@@ -90,4 +90,22 @@ public class ProductController {
         productManagementApplicationService.enable(productId);
     }
 
+    // POST e nao PUT/PATCH: reposicao e saque sao OPERACOES, nao atribuicao de valor.
+    // Um PATCH { "quantityInStock": 40 } seria "o estoque agora e 40", e duas dessas
+    // chegando juntas se sobrescreveriam - o classico lost update. "Some 10" e "subtraia
+    // 10" compoem; "passe a valer 40" nao.
+    //
+    // Respostas: 204 no sucesso, 404 se o produto nao existe, 422 se falta saldo
+    // (InsufficientStockException). Ver docs/02-persistencia/concorrencia-e-atomicidade.md
+    @PostMapping("/{productId}/restock")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void restock(@PathVariable UUID productId, @RequestBody @Valid ProductQuantityModel productQuantityModel) {
+        productManagementApplicationService.restock(productId, productQuantityModel.getQuantity());
+    }
+
+    @PostMapping("/{productId}/withdraw")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void withdraw(@PathVariable UUID productId, @RequestBody @Valid ProductQuantityModel productQuantityModel) {
+        productManagementApplicationService.withdraw(productId, productQuantityModel.getQuantity());
+    }
 }
