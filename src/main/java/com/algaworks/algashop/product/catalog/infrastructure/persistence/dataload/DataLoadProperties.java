@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
-// Espelha o bloco algashop.data-load do application.yml:
+// Espelha o bloco algashop.data-load do application-base.yml:
 //
 //   algashop:
 //     data-load:

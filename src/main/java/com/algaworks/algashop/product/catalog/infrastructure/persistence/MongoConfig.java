@@ -6,6 +6,8 @@ import org.springframework.boot.mongodb.autoconfigure.MongoClientSettingsBuilder
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 
 import java.time.OffsetDateTime;
@@ -28,6 +30,16 @@ public class MongoConfig {
         return new MongoCustomConversions(
                 List.of(new OffsetDatetimeReadConverter(), new OffsetDatetimeWriteConverter())
         );
+    }
+
+    // Registra o gerenciador de transações do Mongo, fazendo o @Transactional valer aqui:
+    // sem este bean o Spring não tem um PlatformTransactionManager para o Mongo e as
+    // escritas saem soltas, uma a uma, sem rollback se alguma falhar no meio.
+    // ATENÇÃO: transação no Mongo só existe em replica set - é por isso que o
+    // docker-compose sobe três nós (rs0) em vez de uma instância única.
+    @Bean
+    public MongoTransactionManager mongoTransactionManager(MongoDatabaseFactory factory) {
+        return new MongoTransactionManager(factory);
     }
 
     // Convertendo o tipo de data OffsetDatetime não aceita em Mongo para o padrão Date

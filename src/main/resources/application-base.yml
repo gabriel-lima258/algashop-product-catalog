@@ -1,0 +1,33 @@
+server.port: 8083
+
+spring:
+  application:
+    name: product-catalog
+  # cria na subida os indices declarados por anotacao no agregado (@Indexed,
+  # @CompoundIndex, @TextIndexed). Sem isso as anotacoes nao fazem nada.
+  # Repare no prefixo: no Boot 4 a CONEXAO virou spring.mongodb.uri, mas esta
+  # propriedade continua em spring.data.mongodb - errar o prefixo nao da erro,
+  # so faz nenhum indice ser criado.
+  # ATENCAO: o Spring desaconselha em producao - a criacao roda na inicializacao
+  # e trava a aplicacao enquanto o indice e construido. La o indice e criado
+  # por fora, em janela controlada
+  data:
+    mongodb:
+      auto-index-creation: true
+
+logging:
+  level:
+    org.mongodb.driver.cluster: OFF
+
+# Carga de massa de teste - ver DataLoader.java
+# ATENCAO: com auto-drop: true as colecoes sao APAGADAS e recriadas a cada inicializacao.
+# Serve para o ambiente de estudo comecar sempre igual; NAO pode ficar assim fora daqui
+algashop:
+  data-load:
+    enabled: false
+    auto-drop: false
+    sources:
+      - location: db/testdata/categories.json
+        collection: categories
+      - location: db/testdata/products.json
+        collection: products

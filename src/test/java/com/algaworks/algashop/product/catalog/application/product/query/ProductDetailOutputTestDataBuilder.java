@@ -35,7 +35,10 @@ public class ProductDetailOutputTestDataBuilder {
                         .description("A Gamer Desktop")
                         .regularPrice(new BigDecimal("1500.00"))
                         .salePrice(new BigDecimal("1000.00"))
-                        .inStock(true)
+                        // false de proposito: o contrato findProductsV1 lista um produto
+                        // em estoque e outro fora, entao a asserção de inStock exercita
+                        // os dois valores em vez de sempre o mesmo
+                        .inStock(false)
                         .enabled(true)
                         .category(CategoryMinimalOutput.builder()
                                 .id(UUID.randomUUID())

@@ -74,9 +74,6 @@ public class Product extends AbstractAggregateRoot<Product> {
     @TextIndexed(weight = 1)
     private String name;
 
-    // indice simples, criado com nome proprio para dar pra identificar no getIndexes().
-    // ATENCAO: hoje nenhuma consulta filtra por marca - a busca por termo virou $text
-    // sobre name/description - entao este indice so custa escrita e memoria
     @Indexed(name = "idx_product_by_brand")
     private String brand;
 

@@ -31,7 +31,7 @@ public class StockService {
     private final QuantityInStockAdjustment quantityInStockAdjustment;
     private final DomainEventPublisher domainEventPublisher;
 
-    public void restock(Product product, int quantity) {
+    public StockMovement restock(Product product, int quantity) {
         Objects.requireNonNull(product);
         requirePositive(quantity);
 
@@ -48,9 +48,17 @@ public class StockService {
                             .build()
             );
         }
+
+        return StockMovement.builder()
+                .productId(product.getId())
+                .movementQuantity(quantity)
+                .previousQuantity(result.previousQuantity())
+                .newQuantity(result.newQuantity())
+                .type(StockMovement.MovementType.STOCK_IN)
+                .build();
     }
 
-    public void withdraw(Product product, int quantity) {
+    public StockMovement withdraw(Product product, int quantity) {
         Objects.requireNonNull(product);
         requirePositive(quantity);
 
@@ -66,6 +74,14 @@ public class StockService {
                             .build()
             );
         }
+
+        return StockMovement.builder()
+                .productId(product.getId())
+                .movementQuantity(quantity)
+                .previousQuantity(result.previousQuantity())
+                .newQuantity(result.newQuantity())
+                .type(StockMovement.MovementType.STOCK_OUT)
+                .build();
     }
 
     // Erro de NEGOCIO passa direto; erro de INFRAESTRUTURA e embrulhado, com a causa

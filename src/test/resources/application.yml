@@ -1,4 +1,4 @@
-# Este arquivo SOMBREIA o src/main/resources/application.yml durante os testes: os dois
+# Este arquivo SOMBREIA o src/main/resources/application-base.yml durante os testes: os dois
 # tem o mesmo nome, e o classpath de teste vem primeiro. E o que garante que nenhuma
 # suite herde por acidente a configuracao de desenvolvimento - em especial a URI do banco.
 #

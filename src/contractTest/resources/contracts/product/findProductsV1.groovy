@@ -20,49 +20,50 @@ Contract.make {
                 ))
             }
         }
-        response {
-            status 200
-            headers {
-                contentType "application/json"
-            }
-            body([
-                    size: fromRequest().query("size"),
-                    number: 0,
-                    totalElements: 2,
-                    totalPages: 1,
-                    content: [
+    }
+
+    response {
+        status 200
+        headers {
+            contentType "application/json"
+        }
+        body([
+                size: fromRequest().query("size"),
+                number: 0,
+                totalElements: 2,
+                totalPages: 1,
+                content: [
                         [
-                            id: anyUuid(),
-                            addedAt: anyIso8601WithOffset(),
-                            name: 'Notebook X11',
-                            brand: 'Deep Diver',
-                            regularPrice: 1500.00,
-                            salePrice: 1000.00,
-                            inStock: true,
-                            enabled: true,
-                            category: [
-                                    id: anyUuid(),
-                                    name: 'Notebook'
-                                    ],
-                            description: "A Gamer Notebook"
+                                id: anyUuid(),
+                                addedAt: anyIso8601WithOffset(),
+                                name: 'Notebook X11',
+                                brand: 'Deep Diver',
+                                regularPrice: 1500.00,
+                                salePrice: 1000.00,
+                                inStock: true,
+                                enabled: true,
+                                category: [
+                                        id: anyUuid(),
+                                        name: 'Notebook'
+                                ],
+                                description: "A Gamer Notebook"
                         ],
                         [
-                            id: anyUuid(),
-                            addedAt: anyIso8601WithOffset(),
-                            name: 'Desktop X900',
-                            brand: 'Deep Diver',
-                            regularPrice: 1500.00,
-                            salePrice: 1000.00,
-                            inStock: false,
-                            enabled: true,
-                            category: [
-                                    id: anyUuid(),
-                                    name: 'Desktop'
-                            ],
-                            description: "A Gamer Desktop"
+                                id: anyUuid(),
+                                addedAt: anyIso8601WithOffset(),
+                                name: 'Desktop X900',
+                                brand: 'Deep Diver',
+                                regularPrice: 1500.00,
+                                salePrice: 1000.00,
+                                inStock: false,
+                                enabled: true,
+                                category: [
+                                        id: anyUuid(),
+                                        name: 'Desktop'
+                                ],
+                                description: "A Gamer Desktop"
                         ]
-                    ]
-            ])
-        }
+                ]
+        ])
     }
 }

@@ -1,0 +1,24 @@
+# A unica coisa especifica do ambiente de teste: para onde a suite aponta quando NINGUEM
+# lhe da um Mongo melhor.
+#
+# Hoje esse "alguem" existe: as classes que importam TestContainerMongoDBConfig ganham um
+# @ServiceConnection, e o Boot sobrescreve a URI abaixo com a do container descartavel.
+# Nesses testes esta URI nao e lida - o que vale e a porta sorteada do container.
+#
+# Entao por que o arquivo continua aqui: ele e a outra metade do grupo de perfis
+# (test = base + test-env). Enquanto existir um teste sem Testcontainers, e esta linha que
+# decide contra qual banco ele roda - e foi exatamente assim que o
+# QuantityInStockAdjustmentConcurrencyIT ficou orfao quando o cluster perdeu a autenticacao:
+# ele nao tinha o container, caiu aqui, e as credenciais antigas deixaram de existir.
+#
+# ATENCAO: o banco e product_catalog_test, NAO product_catalog. A suite roda com
+# algashop.data-load.auto-drop: true, que APAGA as colecoes antes de recarregar a massa.
+# Apontar os testes para o banco de desenvolvimento destruiria os dados a cada execucao.
+#
+# Sem usuario e senha porque o cluster do docker-compose.tools.yml sobe sem --auth. O
+# replicaSet=rs0 acompanha a URI de desenvolvimento: sem ele nao ha transacao.
+spring:
+  application:
+    name: product-catalog
+  mongodb:
+    uri: mongodb://localhost:27017,localhost:27018,localhost:27019/product_catalog_test?replicaSet=rs0

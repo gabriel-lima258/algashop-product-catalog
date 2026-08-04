@@ -125,8 +125,8 @@ public class ProductBase {
     public static final UUID invalidUpdateProductId = UUID.fromString("c77e6ec2-7103-48b3-8e4f-3b58e43fb75a");
     public static final UUID invalidProductId = UUID.fromString("216e6ec2-7103-48b3-8e4f-3b58e43fb75a");
     public static final UUID createNewProductId = UUID.fromString("aaae6ec2-7103-48b3-8e4f-3b58e43fb75a");
-    public static final UUID deleteProductId = UUID.fromString("f1d3a7c4-6b2e-4f8a-9217-5d9c2e1b3a5f");
-    public static final UUID deleteInvalidProductId = UUID.fromString("177e6ec2-7103-48b3-8e4f-3b58e43fb75a");
+    public static final UUID disableProductId = UUID.fromString("f1d3a7c4-6b2e-4f8a-9217-5d9c2e1b3a5f");
+    public static final UUID disableInvalidProductId = UUID.fromString("177e6ec2-7103-48b3-8e4f-3b58e43fb75a");
 
     // O RestDocumentationContextProvider é injetado pela RestDocumentationExtension.
     @BeforeEach
@@ -165,8 +165,8 @@ public class ProductBase {
         mockInvalidProductIdNotFound();
         mockUpdateProduct();
         mockInvalidProductIdUpdated();
-        mockDeleteProductById();
-        mockInvalidDeletedProductId();
+        mockDisableProduct();
+        mockInvalidDisabledProductId();
     }
 
     private void mockCreateProduct() {
@@ -223,14 +223,14 @@ public class ProductBase {
                 .thenThrow(new ResourceNotFoundException());
     }
 
-    private void mockDeleteProductById() {
-        Mockito.doNothing().when(productManagementApplicationService).disable(deleteProductId);
+    private void mockDisableProduct() {
+        Mockito.doNothing().when(productManagementApplicationService).disable(disableProductId);
     }
 
-    private void mockInvalidDeletedProductId() {
+    private void mockInvalidDisabledProductId() {
         Mockito.doThrow(new ResourceNotFoundException())
                 .when(productManagementApplicationService)
-                .disable(deleteInvalidProductId);
+                .disable(disableInvalidProductId);
     }
 
 }

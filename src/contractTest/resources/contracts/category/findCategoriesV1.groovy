@@ -20,29 +20,30 @@ Contract.make {
                 ))
             }
         }
-        response {
-            status 200
-            headers {
-                contentType "application/json"
-            }
-            body([
-                    size: fromRequest().query("size"),
-                    number: 0,
-                    totalElements: 2,
-                    totalPages: 1,
-                    content: [
+    }
+
+    response {
+        status 200
+        headers {
+            contentType "application/json"
+        }
+        body([
+                size: fromRequest().query("size"),
+                number: 0,
+                totalElements: 2,
+                totalPages: 1,
+                content: [
                         [
-                            id: anyUuid(),
-                            name: 'Notebook',
-                            enabled: true
+                                id: anyUuid(),
+                                name: 'Notebook',
+                                enabled: true
                         ],
                         [
-                            id: anyUuid(),
-                            name: 'Electronic',
-                            enabled: true
+                                id: anyUuid(),
+                                name: 'Electronic',
+                                enabled: true
                         ]
-                    ]
-            ])
-        }
+                ]
+        ])
     }
 }

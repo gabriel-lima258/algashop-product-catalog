@@ -1,5 +1,6 @@
 package com.algaworks.algashop.product.catalog.domain.product;
 
+import com.algaworks.algashop.product.catalog.TestContainerMongoDBConfig;
 import com.algaworks.algashop.product.catalog.infrastructure.persistence.MongoConfig;
 import com.algaworks.algashop.product.catalog.infrastructure.persistence.dataload.DataLoadProperties;
 import com.algaworks.algashop.product.catalog.infrastructure.persistence.dataload.DataLoader;
@@ -39,7 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         MongoConfig.class,
         QuantityInStockAdjustmentMongoDBImpl.class,
         DataLoader.class,
-        DataLoadProperties.class
+        DataLoadProperties.class,
+        TestContainerMongoDBConfig.class
 })
 class QuantityInStockAdjustmentConcurrencyIT {
 

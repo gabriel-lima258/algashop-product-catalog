@@ -1,5 +1,6 @@
 package com.algaworks.algashop.product.catalog.domain.product;
 
+import com.algaworks.algashop.product.catalog.TestContainerMongoDBConfig;
 import com.algaworks.algashop.product.catalog.infrastructure.persistence.MongoConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -19,9 +20,10 @@ import java.util.List;
 // OffsetDateTime, e o teste quebraria na leitura dos documentos.
 //
 // Sufixo IT: joga a classe na task integrationTest do Gradle, fora do ./gradlew test.
-// Precisa de um Mongo de pe (docker-compose.tools.yml) e dos dados do DataLoader.
+// Sobe o proprio Mongo, num container descartavel (TestContainerMongoDBConfig) - nao
+// depende mais do docker-compose.tools.yml estar de pe. Os dados vem do DataLoader.
 @DataMongoTest
-@Import(MongoConfig.class)
+@Import({MongoConfig.class, TestContainerMongoDBConfig.class})
 @Slf4j
 class ProductRepositoryIT {
 

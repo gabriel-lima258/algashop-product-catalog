@@ -10,8 +10,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -125,6 +127,56 @@ class StockServiceTest {
                 .isThrownBy(() -> stockService.restock(product, -1));
 
         verifyNoInteractions(quantityInStockAdjustment);
+    }
+
+    // O movimento e o extrato do ajuste: ele tem que repetir exatamente os numeros que
+    // vieram do Result, senao o saldo e o historico contam versoes diferentes do mesmo fato
+    @Test
+    void shouldDescribeTheRestockAsAnIncomingMovement() {
+        Product product = aProduct();
+        givenIncreaseResult(product.getId(), 40, 50);
+
+        StockMovement movement = stockService.restock(product, 10);
+
+        assertThat(movement.getProductId()).isEqualTo(product.getId());
+        assertThat(movement.getType()).isEqualTo(StockMovement.MovementType.STOCK_IN);
+        assertThat(movement.getMovementQuantity()).isEqualTo(10);
+        assertThat(movement.getPreviousQuantity()).isEqualTo(40);
+        assertThat(movement.getNewQuantity()).isEqualTo(50);
+        assertThat(movement.getOccurredAt()).isNotNull();
+    }
+
+    // o sinal mora no type, nunca na quantidade: uma saida de 10 grava 10, e nao -10.
+    // Se isso inverter, toda soma de "quanto saiu" passa a mentir em silencio
+    @Test
+    void shouldDescribeTheWithdrawAsAnOutgoingMovementWithPositiveQuantity() {
+        Product product = aProduct();
+        givenDecreaseResult(product.getId(), 50, 40);
+
+        StockMovement movement = stockService.withdraw(product, 10);
+
+        assertThat(movement.getProductId()).isEqualTo(product.getId());
+        assertThat(movement.getType()).isEqualTo(StockMovement.MovementType.STOCK_OUT);
+        assertThat(movement.getMovementQuantity()).isPositive().isEqualTo(10);
+        assertThat(movement.getPreviousQuantity()).isEqualTo(50);
+        assertThat(movement.getNewQuantity()).isEqualTo(40);
+    }
+
+    // dois movimentos com os mesmos numeros continuam sendo dois fatos distintos.
+    // Com onlyExplicitlyIncluded e nenhum campo incluido, os dois seriam "iguais" e um
+    // Set guardaria so um deles
+    @Test
+    void shouldTreatTwoIdenticalMovementsAsDistinctFacts() {
+        Product product = aProduct();
+        when(quantityInStockAdjustment.decrease(eq(product.getId()), anyInt()))
+                .thenReturn(new QuantityInStockAdjustment.Result(product.getId(), 50, 40));
+
+        StockMovement first = stockService.withdraw(product, 10);
+        StockMovement second = stockService.withdraw(product, 10);
+
+        assertThat(first.getId()).isNotEqualTo(second.getId());
+        assertThat(first).isNotEqualTo(second);
+        assertThat(Set.of(first, second)).hasSize(2);
     }
 
     private void givenIncreaseResult(UUID productId, int previous, int current) {
