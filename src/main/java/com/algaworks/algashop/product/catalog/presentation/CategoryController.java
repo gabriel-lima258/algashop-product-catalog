@@ -32,9 +32,14 @@ import com.algaworks.algashop.product.catalog.application.category.query.Categor
 import com.algaworks.algashop.product.catalog.application.util.PageModel;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @RestController
@@ -43,17 +48,42 @@ import java.util.UUID;
 public class CategoryController {
 
     private final CategoryQueryService categoryQueryService;
-
     private final CategoryManagementApplicationService categoryManagementApplicationService;
 
+    // cache http client side
     @GetMapping("/{categoryId}")
-    public CategoryDetailOutput findById(@PathVariable UUID categoryId) {
-        return categoryQueryService.findById(categoryId);
+    public ResponseEntity<CategoryDetailOutput> findById(@PathVariable UUID categoryId) {
+        CategoryDetailOutput category = categoryQueryService.findById(categoryId);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
+                .eTag("category:id:" + category.getId() + ":v:" + category.getVersion())
+                .lastModified(category.getUpdatedAt().toInstant())
+                .body(category);
     }
 
     @GetMapping
-    public PageModel<CategoryDetailOutput> filter(CategoryFilter filter) {
-        return categoryQueryService.filter(filter);
+    public ResponseEntity<PageModel<CategoryDetailOutput>> filter(CategoryFilter filter, WebRequest webRequest) {
+
+        // se não cacheado deixa consultar o banco sem cache
+        if (!filter.isCacheable()) {
+            PageModel<CategoryDetailOutput> result = categoryQueryService.filter(filter);
+            return ResponseEntity.ok()
+                    .body(result);
+        }
+
+        // usando a ultima categoria modificada como consulta
+        OffsetDateTime lastModified = categoryQueryService.lastModified();
+
+        // caso não foi modificado retorne status
+        if (webRequest.checkNotModified(lastModified.toInstant().toEpochMilli())) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
+        }
+
+        PageModel<CategoryDetailOutput> result = categoryQueryService.filter(filter);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
+                .lastModified(lastModified.toInstant())
+                .body(result);
     }
 
     @PostMapping

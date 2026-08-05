@@ -170,17 +170,23 @@ public class ProductBase {
     }
 
     private void mockCreateProduct() {
-        // cria um novo produto com UUID novo
+        ProductDetailOutput productDetailOutput = ProductDetailOutputTestDataBuilder.aProduct()
+                .id(createNewProductId).inStock(false).build();
         Mockito.when(productManagementApplicationService.create(Mockito.any(ProductInput.class)))
-                .thenReturn(createNewProductId);
+                .thenReturn(productDetailOutput);
+
         Mockito.when(productQueryService.findById(createNewProductId))
-                .thenReturn(ProductDetailOutputTestDataBuilder.aProduct().build());
+                .thenReturn(productDetailOutput);
     }
 
+    // O update deixou de ser void e passou a devolver o proprio ProductDetailOutput;
+    // o controller agora retorna esse resultado direto, sem reconsultar o query service.
+    // Por isso o stub vive em update(), e nao mais em findById().
     private void mockUpdateProduct() {
-        Mockito.doNothing().when(productManagementApplicationService).update(Mockito.any(UUID.class), Mockito.any(ProductInput.class));
-        Mockito.when(productQueryService.findById(validUpdateProductId))
-                .thenReturn(ProductDetailOutputTestDataBuilder.aProductAlt().build());
+        Mockito.when(productManagementApplicationService.update(
+                        Mockito.eq(validUpdateProductId), Mockito.any(ProductInput.class)))
+                .thenReturn(ProductDetailOutputTestDataBuilder.aProductAlt()
+                        .id(validUpdateProductId).build());
     }
 
     private void mockInvalidProductIdUpdated() {

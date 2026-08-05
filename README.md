@@ -19,6 +19,7 @@ Modelar em documento não é "salvar JSON". É decidir, a cada relacionamento, e
 | **Java** | 25 |
 | **Spring Boot** | 4.0.1 |
 | **Banco** | MongoDB 8 — replica set `rs0` de três nós |
+| **Cache** | Redis 8 (banco lógico 0) |
 | **Porta** | 8083 |
 | **Pacote raiz** | `com.algaworks.algashop.product.catalog` |
 | **Coleções** | `products`, `categories`, `stock_movements` |
@@ -55,6 +56,39 @@ Coberto por teste com threads de verdade, soltas juntas por um `CountDownLatch` 
 Ajustar o saldo e registrar a movimentação em `stock_movements` são duas escritas, e o Mongo só garante atomicidade de uma. Saldo certo que nenhum histórico explica é pior que saldo errado: não dá nem para auditar.
 
 Daí o `@Transactional` e o `MongoTransactionManager` — e daí o **replica set de três nós no compose**, porque transação no MongoDB não existe fora dele. É um requisito de domínio que atravessou o sistema até a infraestrutura.
+
+### Cache em duas camadas
+
+O catálogo é lido muito mais do que escrito, então ele cacheia — **server-side**, no Redis, e autorizando o **cliente** a cachear por cabeçalho HTTP.
+
+```java
+// cache-aside: lê do Redis, cai no Mongo só no miss
+@Cacheable(cacheNames = CacheNames.PRODUCTS, key = "#productId")
+ProductDetailOutput findById(UUID productId);
+
+// write-through: grava no banco e no cache na mesma operação
+@CachePut(cacheNames = CacheNames.PRODUCTS, key = "#result.id",
+          condition = "#input.enabled == true")
+public ProductDetailOutput create(ProductInput input) { ... }
+```
+
+Do lado do cliente, o `ETag` sai do `@Version` do documento — o validador já existia, e ele só muda quando o Mongo grava:
+
+```java
+return ResponseEntity.ok()
+        .cacheControl(CacheControl.maxAge(Duration.ofMinutes(1)).cachePublic())
+        .eTag("product:id" + product.getId() + ":v:" + product.getVersion())
+        .lastModified(product.getUpdatedAt().toInstant())
+        .body(product);
+```
+
+A listagem de categorias vai além e responde **304 sem corpo** quando nada mudou, comparando com um `max(updatedAt)` da coleção.
+
+Duas decisões que valem mais que a implementação:
+
+**Só o filtro default é cacheado.** Cachear listagem com filtro livre é armadilha de cardinalidade — cada combinação de nome, página e ordenação vira uma chave pedida uma vez só. A listagem de **produtos**, que tem busca textual e faixa de preço, não é cacheada pela mesma razão.
+
+**Erro de cache é engolido.** O `ResilienceCacheErrorHandler` faz *fail-open*: Redis fora do ar significa "vou ao Mongo", não "desisti". Um cache que derruba o serviço ao cair inverteu a própria razão de existir.
 
 ### Três caminhos diferentes para publicar evento
 
@@ -124,7 +158,9 @@ A partir do repositório [`algashop-meta`](https://github.com/gabriel-lima258/al
 docker compose -f docker-compose.tools.yml up -d
 ```
 
-Isso sobe **três nós** de MongoDB (27017, 27018, 27019) e um container efêmero que executa o `rs.initiate` e morre.
+Isso sobe **três nós** de MongoDB (27017, 27018, 27019), um container efêmero que executa o `rs.initiate` e morre, e o **Redis** na 6379.
+
+> ⚠️ O Redis precisa do `.env` na raiz do meta (`REDIS_PASSWORD=algashop`). Sem ele o Compose resolve a senha para string vazia, o Redis sobe sem autenticação e o cache nunca funciona — sem quebrar nada, porque o error handler engole a falha.
 
 Os nós se anunciam pelos nomes internos do Docker, então sua máquina precisa saber resolvê-los. Acrescente ao arquivo `hosts`:
 
@@ -177,5 +213,7 @@ Este é o serviço mais documentado do projeto. Em [`algashop-docs`](https://git
 - [Concorrência e atomicidade](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/concorrencia-e-atomicidade.md) — lost update, `findAndModify`, `$inc` como delta
 - [Transações e replica set](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/transacoes-mongo.md) — por que transação exige cluster, e quando ela não acrescenta nada
 - [Eventos e listeners](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/eventos-e-listeners.md) — os três mecanismos, e o que a consistência eventual custa
+- [Cache](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/cache.md) — cache-aside × write-through, invalidação e por que a idade de um dado é a soma das camadas
+- [Redis na prática](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/redis.md) — eviction, TTL, inspeção e a armadilha da senha vazia
 - [Consultas com Criteria](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/consultas-mongo-criteria.md) · [Índices](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/indices-mongo.md) · [Aggregation Pipeline](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/agregacoes-mongo.md)
 - [Carga de dados](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/carga-de-dados-mongo.md) · [Ambiente local](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/ambiente-local.md)

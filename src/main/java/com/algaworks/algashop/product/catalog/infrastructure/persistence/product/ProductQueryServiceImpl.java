@@ -272,24 +272,13 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     // a primeira metade so repassa campo cru; a segunda CALCULA, no servidor, o que antes
     // era conversor do ModelMapper rodando em Java depois da consulta
     private ProjectionOperation projectionForSummary() {
-        return project()
-                .and("_id").as("_id")
-                .and("addedAt").as("addedAt")
-                .and("name").as("name")
-                .and("brand").as("brand")
-                .and("regularPrice").as("regularPrice")
-                .and("salePrice").as("salePrice")
-                .and("enabled").as("enabled")
-                .and("quantityInStock").as("quantityInStock")
-                .and("discountPercentageRounded").as("discountPercentageRounded")
-                .and("score").as("score")
-                // vem do proprio documento, do subdocumento category embutido. ate a
-                // desnormalizacao estes campos so existiam depois do $lookup - hoje sao
-                // repasse puro, como qualquer outro campo cru acima
-                .and("category._id").as("category._id")
-                .and("category.name").as("category.name")
-                .and("category.enabled").as("category.enabled")
-
+        // project(Class) deriva a lista de campos do DTO em vez de repeti-la a mao.
+        // A classe tem que ser a MESMA que o pipeline materializa la em cima
+        // (aggregate(..., ProductSummaryOutput.class)): apontar para outra compila,
+        // roda, e devolve null nos campos que so existem no destino. Foi assim que o
+        // score - o campo de relevancia do $text - sumiu da listagem sem nada acusar,
+        // porque nenhum contrato e nenhum teste afirmam nada sobre ele
+        return project(ProductSummaryOutput.class)
                 // campos derivados: a mesma regra do agregado, reescrita em operador do Mongo
                 .andExpression("salePrice < regularPrice").as("hasDiscount")
                 .andExpression("quantityInStock > 0").as("inStock")

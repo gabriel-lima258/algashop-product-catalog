@@ -1,12 +1,18 @@
 package com.algaworks.algashop.product.catalog.application.product.management;
 
 import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
+import com.algaworks.algashop.product.catalog.application.product.query.ProductDetailOutput;
+import com.algaworks.algashop.product.catalog.application.util.CacheNames;
+import com.algaworks.algashop.product.catalog.application.util.Mapper;
 import com.algaworks.algashop.product.catalog.domain.category.Category;
 import com.algaworks.algashop.product.catalog.domain.category.CategoryNotFoundException;
 import com.algaworks.algashop.product.catalog.domain.category.CategoryRepository;
 import com.algaworks.algashop.product.catalog.domain.product.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +28,38 @@ public class ProductManagementApplicationService {
 
     private final StockService stockService;
 
-    public UUID create(ProductInput input) {
+    private final Mapper mapper;
+
+    // WRITE-THROUGH: grava no banco e no cache na MESMA operacao, sem esperar alguem
+    // pedir. O contrario do cache-aside do findById, que so popula depois do primeiro
+    // miss - aqui o produto ja nasce quente.
+    //
+    // Repare no que isso custou: create deixou de devolver UUID e passou a devolver
+    // ProductDetailOutput. Nao foi capricho - o key = "#result.id" precisa de um
+    // retorno com id, e o valor guardado no cache e justamente o que o metodo devolve.
+    // Uma decisao de cache mudou a assinatura de um metodo de aplicacao, e vale saber
+    // que essa e a natureza do @CachePut: ele cacheia o RETORNO, entao o retorno tem
+    // que ser o que se quer cachear.
+    //
+    // O condition existe porque produto desabilitado nao deve ocupar cache: ele nao
+    // aparece na listagem e quase nunca e consultado.
+    @CachePut(cacheNames = CacheNames.PRODUCTS, key = "#result.id",
+              condition = "#input.enabled == true")
+    public ProductDetailOutput create(ProductInput input) {
         Product product = mapToProduct(input);
         productRepository.save(product);
-        return product.getId();
+
+        return mapper.convert(product, ProductDetailOutput.class);
     }
 
-    public void update(UUID productId, ProductInput input) {
+    // As duas anotacoes convivem porque as condicoes sao EXCLUDENTES: habilitado
+    // reescreve a entrada, desabilitado a remove. Sem o par, desabilitar um produto por
+    // update deixaria a versao antiga - ainda habilitada - servindo do cache ate o TTL.
+    @CachePut(cacheNames = CacheNames.PRODUCTS, key = "#result.id",
+              condition = "#input.enabled == true")
+    @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId",
+              condition = "#input.enabled == false")
+    public ProductDetailOutput update(UUID productId, ProductInput input) {
         Product product = findProduct(productId);
         Category category = findCategory(input.getCategoryId());
 
@@ -36,14 +67,23 @@ public class ProductManagementApplicationService {
         product.setCategory(category);
 
         productRepository.save(product);
+
+        return mapper.convert(product, ProductDetailOutput.class);
     }
 
+    // toda vez que um produto e desativado invalidamos seu cache
+    @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void disable(UUID productId) {
         Product product = findProduct(productId);
         product.disable();
         productRepository.save(product);
     }
 
+    // O par do disable. Faltava, e a assimetria era silenciosa: reabilitar um produto
+    // nao invalidava nada, entao quem tivesse lido a versao desabilitada continuava
+    // recebendo enabled: false ate o TTL. Todo metodo que muda estado cacheado precisa
+    // dizer o que fazer com o cache - inclusive para dizer "nada"
+    @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void enable(UUID productId) {
         Product product = findProduct(productId);
         product.enable();
@@ -71,7 +111,37 @@ public class ProductManagementApplicationService {
     //   estoque junto - o evento nao e um "depois", e parte do mesmo commit
     // - o findAndModify do adaptador entra na transacao porque o MongoOperations usa a
     //   sessao que o MongoTransactionManager amarrou a thread (ver MongoConfig)
+    //
+    // -------------------------------------------------------------------------
+    //
+    // O @CacheEvict aqui faltava, e a falta era facil de nao ver: nem restock nem
+    // withdraw carregam ou salvam o Product - o ajuste vai direto ao banco por
+    // findAndModify. Nada nesses metodos "parece" mexer no produto. Mas quantityInStock
+    // muda, e com ele o inStock que o ProductDetailOutput carrega - entao a entrada em
+    // cache passa a mentir sobre disponibilidade, que e justamente o campo que alguem
+    // consulta antes de comprar.
+    //
+    // ORDEM em relacao a transacao - o detalhe que vale entender aqui:
+    //
+    // O que E garantido: beforeInvocation = false (o padrao) faz a evicao rodar DEPOIS
+    // do metodo, e SO se ele retornar sem excecao. Saque recusado por saldo insuficiente
+    // estoura InsufficientStockException, entao nao evicta nada - correto, ja que o
+    // banco tambem nao mudou.
+    //
+    // O que NAO e garantido: a ordem entre o interceptador de cache e o de transacao.
+    // Os dois registram seus advisors com LOWEST_PRECEDENCE por padrao, e o desempate
+    // fica por conta da ordem de registro. Na pratica isso significa que a evicao pode
+    // cair antes ou depois do commit, e nao da para depender de uma das duas.
+    //
+    // Qual dos dois lados dessa moeda machuca: evicao depois do commit e o caso benigno.
+    // Antes do commit abre uma janela em que outra thread lê o banco ainda no valor
+    // antigo e REPOPULA o cache com ele - dado velho de volta, agora com o TTL inteiro
+    // pela frente. Fechar isso de vez pediria @TransactionalEventListener(AFTER_COMMIT)
+    // publicando a evicao, ou @EnableCaching(order = ...) forcando a precedencia. Fica
+    // registrado como pendencia em docs/01-arquitetura-design/cache.md; o TTL curto e o
+    // que limita o estrago enquanto isso.
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void restock(UUID productId, int quantity) {
         Product product = findProduct(productId);
         StockMovement movement = stockService.restock(product, quantity);
@@ -79,6 +149,7 @@ public class ProductManagementApplicationService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void withdraw(UUID productId, int quantity) {
         Product product = findProduct(productId);
         StockMovement movement = stockService.withdraw(product, quantity);

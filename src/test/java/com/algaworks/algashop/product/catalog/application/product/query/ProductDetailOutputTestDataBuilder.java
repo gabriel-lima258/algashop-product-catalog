@@ -9,10 +9,15 @@ public class ProductDetailOutputTestDataBuilder {
 
     private ProductDetailOutputTestDataBuilder() {}
 
+    // version e updatedAt nao sao opcionais para os testes: o ProductController.findById
+    // monta ETag com getVersion() e Last-Modified com getUpdatedAt().toInstant() —
+    // sem updatedAt o controller estoura NullPointerException antes de responder.
     public static ProductDetailOutput.ProductDetailOutputBuilder aProduct() {
         return ProductDetailOutput.builder()
                 .id(UUID.randomUUID())
                 .addedAt(OffsetDateTime.now())
+                .version(1L)
+                .updatedAt(OffsetDateTime.now())
                 .name("Notebook X11")
                 .brand("Deep Diver")
                 .description("A Gamer Notebook")
@@ -30,6 +35,8 @@ public class ProductDetailOutputTestDataBuilder {
         return ProductDetailOutput.builder()
                         .id(UUID.randomUUID())
                         .addedAt(OffsetDateTime.now())
+                        .version(1L)
+                        .updatedAt(OffsetDateTime.now())
                         .name("Desktop X900")
                         .brand("Deep Diver")
                         .description("A Gamer Desktop")
