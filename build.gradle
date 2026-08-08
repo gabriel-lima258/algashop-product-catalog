@@ -60,11 +60,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.modelmapper:modelmapper:3.2.6'
     implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.1'
     implementation 'org.apache.commons:commons-lang3:3.20.0'
-    implementation 'org.springframework.boot:spring-boot-starter-cache'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
@@ -181,4 +182,24 @@ asciidoctor {
     // Diretório de saída do HTML gerado.
     // Abra build/docs/asciidoc/index.html no navegador para ver a documentação.
     outputDir = file("build/docs/asciidoc")
+}
+
+// customiza o nome do jar criado
+// ATENCAO: este nome tem que casar com o JAR_NAME do Dockerfile - o ADD copia
+// build/libs/$JAR_NAME, entao divergir aqui quebra o build da imagem.
+bootJar {
+    archiveFileName = 'product-catalog.jar'
+}
+
+// task para realizar o build da aplicação
+tasks.register('dockerBuild', Exec) {
+    description = 'Builds a multi-plataform Docker image using Buildx'
+    group = 'build'
+    dependsOn('bootJar')
+    workingDir project.rootDir
+    commandLine '/usr/local/bin/docker', 'buildx', 'build',
+            '--platform', 'linux/arm64/v8,linux/amd64',
+            '--tag', 'gabriel58221/product-catalog:dev',
+            '--push',
+            '.'
 }

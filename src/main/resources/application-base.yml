@@ -31,3 +31,28 @@ algashop:
         collection: categories
       - location: db/testdata/products.json
         collection: products
+
+# readiness verifica se a aplicação está saudável para receber requisições
+# para verificar isso identificamos em group os serviços que são necessários para ser saudável
+# redis age como opcional para health up, aplicação funciona degradada
+management:
+  info:
+    env.enabled: true
+  health:
+    redis:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      group:
+        readiness:
+          include: mongo,readinessState
+      status:
+        order: "DOWN, OUT_OF_SERVICE, UNKNOWN, DEGRADED, UP"
+
+info:
+  app.name: Algashop Product Catalog API

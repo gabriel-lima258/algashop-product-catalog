@@ -202,6 +202,39 @@ Os `*IT` sobem o **próprio MongoDB** num container descartável (Testcontainers
 
 São **17 contratos** em `src/contractTest/resources/contracts/` — 9 de produto, 8 de categoria. Eles geram os testes que verificam este serviço e o stub que o `ordering` consome para testar sem o catálogo de pé.
 
+
+### Health check
+
+```bash
+curl -s localhost:8083/actuator/health | jq            # tudo
+curl -s localhost:8083/actuator/health/readiness | jq  # só o essencial
+```
+
+O grupo `readiness` inclui **apenas o MongoDB** — o Redis fora do ar não tira a instância de rotação, só marca o serviço como `DEGRADED`. É um status inventado pelo projeto, posicionado entre `UNKNOWN` e `UP` no `status.order`.
+
+> ⚠️ `DEGRADED` devolve **HTTP 200**: só `DOWN` e `OUT_OF_SERVICE` viram 503 por padrão. Um probe que olhe o código de status não vê diferença.
+
+Detalhes em [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/health-checks.md).
+
+---
+
+## Imagem Docker
+
+```bash
+./gradlew bootJar
+docker build -t gabriel58221/product-catalog:dev .
+```
+
+Ou multi-arquitetura com push:
+
+```bash
+./gradlew dockerBuild
+```
+
+A base é `eclipse-temurin:25-jre`, acompanhando o toolchain do `build.gradle`. O `ENV JAR_NAME` do Dockerfile tem que casar com o `bootJar { archiveFileName }` — o `ADD` copia `build/libs/$JAR_NAME`.
+
+Este serviço foi o último dos quatro a ganhar imagem, e com ela entrou no `docker-compose.services.yml`, esperando o `algashop-mongodb-init` terminar (`condition: service_completed_successfully`): os nós Mongo ficam *healthy* antes de o replica set existir, então esperar por eles não bastaria.
+
 ---
 
 ## Documentação
@@ -214,6 +247,7 @@ Este é o serviço mais documentado do projeto. Em [`algashop-docs`](https://git
 - [Transações e replica set](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/transacoes-mongo.md) — por que transação exige cluster, e quando ela não acrescenta nada
 - [Eventos e listeners](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/eventos-e-listeners.md) — os três mecanismos, e o que a consistência eventual custa
 - [Cache](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/cache.md) — cache-aside × write-through, invalidação e por que a idade de um dado é a soma das camadas
+- [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/health-checks.md) — liveness × readiness e o status DEGRADED
 - [Redis na prática](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/redis.md) — eviction, TTL, inspeção e a armadilha da senha vazia
 - [Consultas com Criteria](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/consultas-mongo-criteria.md) · [Índices](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/indices-mongo.md) · [Aggregation Pipeline](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/agregacoes-mongo.md)
 - [Carga de dados](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/carga-de-dados-mongo.md) · [Ambiente local](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/ambiente-local.md)

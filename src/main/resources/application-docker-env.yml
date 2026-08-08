@@ -1,0 +1,20 @@
+# Perfil ativado pelo grupo 'docker' (ver application.yml): base + development-env + docker-env.
+# Como development-env vem antes, este arquivo so precisa sobrescrever o que muda de
+# endereco quando a aplicacao roda DENTRO da rede do compose. Senha, porta e database
+# do Redis, e a carga de massa (data-load), continuam herdados de development-env.
+spring:
+  # Os nos precisam ser os NOMES DE CONTAINER, nao localhost: o replica set foi
+  # iniciado em docker-compose.tools.yml com algashop-mongodb-1/2/3:27017, e e esse
+  # endereco que o driver recebe na descoberta da topologia e passa a usar de fato.
+  mongodb:
+    uri: mongodb://algashop-mongodb-1:27017,algashop-mongodb-2:27017,algashop-mongodb-3:27017/product_catalog?replicaSet=rs0
+  data:
+    redis:
+      host: algashop-redis
+
+# O DEBUG do driver de dentro do container so polui o log do compose
+logging:
+  level:
+    org.mongodb.driver.protocol.command: INFO
+    org.mongodb.driver.protocol.query: INFO
+    org.mongodb.driver.connection: INFO
