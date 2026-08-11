@@ -120,18 +120,21 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 //                lookup("categories", "categoryId", "_id", "category"),
 //                unwind("$category"),
                 sort(sortWith(filter)),
-                projectionForSummary(),
                 skip(pageRequest.getOffset()),
                 limit(filter.getSize())
         ));
 
         Aggregation aggregation = newAggregation(operations);
 
-        // 4. executa: le da colecao de Product, materializa em ProductSummaryOutput.
-        // o $project ja devolve os campos com o nome do DTO, entao nao passa por ModelMapper
-        List<ProductSummaryOutput> productSummaryOutputs = mongoOperations
-                .aggregate(aggregation, Product.class, ProductSummaryOutput.class)
+        // 4.1 executa: le da colecao de Product junto com Images.
+        List<Product> products = mongoOperations
+                .aggregate(aggregation, Product.class, Product.class)
                 .getMappedResults();
+
+        // 4.2 executa: le da colecao de Product, materializa em ProductSummaryOutput.
+        // o $project ja devolve os campos com o nome do DTO, entao nao passa por ModelMapper
+        List<ProductSummaryOutput> productSummaryOutputs = products.stream()
+                .map(p -> mapper.convert(p, ProductSummaryOutput.class)).toList();
 
         int totalPages = (int) Math.ceil((double) totalElements / (double) filter.getSize());
 
@@ -266,26 +269,5 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         }
         return Sort.by(filter.getSortDirectionOrDefault(),
                 filter.getSortByPropertyOrDefault().getPropertyName());
-    }
-
-    // $project: escolhe o que sai do pipeline e ja monta o formato do ProductSummaryOutput.
-    // a primeira metade so repassa campo cru; a segunda CALCULA, no servidor, o que antes
-    // era conversor do ModelMapper rodando em Java depois da consulta
-    private ProjectionOperation projectionForSummary() {
-        // project(Class) deriva a lista de campos do DTO em vez de repeti-la a mao.
-        // A classe tem que ser a MESMA que o pipeline materializa la em cima
-        // (aggregate(..., ProductSummaryOutput.class)): apontar para outra compila,
-        // roda, e devolve null nos campos que so existem no destino. Foi assim que o
-        // score - o campo de relevancia do $text - sumiu da listagem sem nada acusar,
-        // porque nenhum contrato e nenhum teste afirmam nada sobre ele
-        return project(ProductSummaryOutput.class)
-                // campos derivados: a mesma regra do agregado, reescrita em operador do Mongo
-                .andExpression("salePrice < regularPrice").as("hasDiscount")
-                .andExpression("quantityInStock > 0").as("inStock")
-                // substringCP e nao substring: o $substr corta por BYTE e o Mongo devolve erro
-                // se o corte cair no meio de um caractere UTF-8 (trivial com "ç", "ã", "é").
-                // $substrCP conta caractere, entao descricao com acento nao quebra
-                .and(StringOperators.valueOf("description")
-                        .substringCP(0, 50)).as("shortDescription");
     }
 }

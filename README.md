@@ -235,6 +235,39 @@ A base é `eclipse-temurin:25-jre`, acompanhando o toolchain do `build.gradle`. 
 
 Este serviço foi o último dos quatro a ganhar imagem, e com ela entrou no `docker-compose.services.yml`, esperando o `algashop-mongodb-init` terminar (`condition: service_completed_successfully`): os nós Mongo ficam *healthy* antes de o replica set existir, então esperar por eles não bastaria.
 
+
+### Imagens de produto — o upload não passa por aqui
+
+O catálogo **nunca vê os bytes**. Ele autoriza, e o cliente envia direto ao S3:
+
+```
+1. POST /api/v1/upload-requests        -> uploadSignedUrl + remoteFileName + expiresAt
+2. PUT  <uploadSignedUrl>              -> o CLIENTE envia o arquivo ao S3
+3. POST /api/v1/products/{id}/images   -> { "remoteFileName": "..." }
+```
+
+O passo 3 confere no storage (`fileExists`) que o arquivo realmente chegou antes de anexar — sem isso, o produto guardaria referência para imagem que nunca subiu.
+
+| Verbo | Path | O que faz |
+|---|---|---|
+| `GET` | `/api/v1/products/{id}/images` | lista as imagens |
+| `GET` | `/api/v1/products/{id}/images/{imageId}` | uma imagem |
+| `POST` | `/api/v1/products/{id}/images` | anexa uma já enviada → `201` |
+| `PUT` | `/api/v1/products/{id}/images/{imageId}/primary` | define a principal → `204` |
+| `DELETE` | `/api/v1/products/{id}/images/{imageId}` | remove do produto **e do bucket** → `204` |
+
+Em desenvolvimento o S3 é o **LocalStack** (porta 4566), com bucket, CORS e imagens de exemplo criados sozinhos na subida do compose. Para rodar sem ele:
+
+```yaml
+algashop:
+  storage:
+    provider: fake
+```
+
+> ⚠️ A URL assinada aponta para `algashop-localstack:4566` e vai para o navegador — as três linhas de LocalStack no arquivo `hosts` são o que a tornam alcançável.
+
+Detalhes em [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/armazenamento-de-arquivos.md).
+
 ---
 
 ## Documentação
@@ -247,6 +280,7 @@ Este é o serviço mais documentado do projeto. Em [`algashop-docs`](https://git
 - [Transações e replica set](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/transacoes-mongo.md) — por que transação exige cluster, e quando ela não acrescenta nada
 - [Eventos e listeners](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/eventos-e-listeners.md) — os três mecanismos, e o que a consistência eventual custa
 - [Cache](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/cache.md) — cache-aside × write-through, invalidação e por que a idade de um dado é a soma das camadas
+- [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/armazenamento-de-arquivos.md) — URL pré-assinada e o upload que não passa pelo backend
 - [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/health-checks.md) — liveness × readiness e o status DEGRADED
 - [Redis na prática](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/redis.md) — eviction, TTL, inspeção e a armadilha da senha vazia
 - [Consultas com Criteria](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/consultas-mongo-criteria.md) · [Índices](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/indices-mongo.md) · [Aggregation Pipeline](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/agregacoes-mongo.md)

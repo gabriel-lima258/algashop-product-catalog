@@ -10,12 +10,23 @@ spring:
       password: algashop
       database: 0
       timeout: 600
+  cloud:
+    aws:
+      region:
+        static: us-east-1
+      endpoint: http://algashop-localstack:4566 # em prod não precisa
+      credentials:
+        access-key: LSIAQAAAAAAVNCBMPNSG
+        secret-key: test
+      s3:
+        enabled: true
+        path-style-access-enabled: true # em prod não precisa, facilita o uso em local
 
 logging:
   level:
     org.mongodb.driver.protocol.command: DEBUG
-    org.mongodb.driver.protocol.query: DEBUG
-    org.mongodb.driver.connection: DEBUG
+#    org.mongodb.driver.protocol.query: DEBUG
+#    org.mongodb.driver.connection: DEBUG
     org.mongodb.driver.cluster: OFF
 
 algashop:
@@ -27,3 +38,9 @@ algashop:
         collection: categories
       - location: db/testdata/products.json
         collection: products
+  mapping:
+    image-storage-url: http://algashop-localstack:4566/algashop-product-image
+  storage:
+    s3:
+      bucket-name: algashop-product-image
+

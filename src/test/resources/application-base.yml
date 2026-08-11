@@ -13,6 +13,20 @@ spring:
   data:
     mongodb:
       auto-index-creation: true
+  # O starter do S3 esta no classpath, entao a autoconfiguracao do Spring Cloud AWS
+  # tenta construir o bean s3Client na subida do contexto - independente de qual
+  # StorageProvider esta ativo. Sem regiao ela procura em toda a cadeia de provedores
+  # (variavel de ambiente, ~/.aws/config, metadata da instancia) e falha com
+  # "Unable to load region from any of the providers in the chain", derrubando o
+  # contexto inteiro de TODOS os *IT. Fixar aqui resolve sem rede nenhuma: o cliente
+  # e preguicoso, construi-lo nao abre conexao.
+  cloud:
+    aws:
+      region:
+        static: us-east-1
+      credentials:
+        access-key: test
+        secret-key: test
 
 logging:
   level:
@@ -21,6 +35,17 @@ logging:
     org.mongodb.driver.connection: DEBUG
 
 algashop:
+  # Em teste o provider e o fake, nao o s3. Nenhum *IT deve depender de localstack de
+  # pe para subir: o fake responde requestUploadUrl com URL de mentira e fileExists
+  # com true (menos para "fail.jpg", que existe justamente para exercitar a rejeicao).
+  # Sem esta linha vale o matchIfMissing = true do StorageProviderAwsS3Impl.
+  storage:
+    provider: fake
+  # ApplicationMappingProperty e @Component incondicional com @Validated @NotBlank -
+  # sem esta propriedade o contexto nao sobe em ambiente nenhum. O valor e so um
+  # prefixo para montar a URL de leitura da imagem; nada e resolvido de fato.
+  mapping:
+    image-storage-url: http://localhost:4566/algashop-product-image
   data-load:
     enabled: true
     auto-drop: true

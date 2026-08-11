@@ -31,6 +31,12 @@ algashop:
         collection: categories
       - location: db/testdata/products.json
         collection: products
+  # Qual implementacao de StorageProvider entra no contexto: s3 (localstack/AWS) ou fake.
+  # Existem duas @Component implementando a mesma interface; sem essa chave o Spring nao
+  # sabe qual injetar e a aplicacao nem sobe. Trocar para 'fake' permite rodar o servico
+  # sem localstack - o upload devolve URL de mentira e o health do S3 sai do actuator
+  storage:
+    provider: s3
 
 # readiness verifica se a aplicação está saudável para receber requisições
 # para verificar isso identificamos em group os serviços que são necessários para ser saudável

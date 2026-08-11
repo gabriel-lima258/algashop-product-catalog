@@ -18,8 +18,7 @@ import org.springframework.data.mongodb.core.mapping.TextScore;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Document(collection = "products")
 @Getter
@@ -132,6 +131,13 @@ public class Product extends AbstractAggregateRoot<Product> {
     @TextScore
     private Float score;
 
+    // A imagem principal e uma REFERENCIA para um dos elementos de images, nao uma
+    // copia - as invariantes abaixo dependem disso. Set porque a ordem nao significa
+    // nada aqui e a identidade e o id do Image (ver o equals da classe)
+    private Image mainImage;
+
+    private Set<Image> images = new HashSet<>();
+
     @Builder
     public Product(String name, String brand, Boolean enabled, BigDecimal regularPrice,
                    BigDecimal salePrice, String description, Category category) {
@@ -239,6 +245,62 @@ public class Product extends AbstractAggregateRoot<Product> {
         return getDiscountPercentageRounded() != null && getDiscountPercentageRounded() > 0;
     }
 
+    // Imutavel de proposito: quem tem o agregado na mao nao adiciona nem remove imagem
+    // por fora - so por addImage/removeImage, que e onde as invariantes vivem.
+    public Set<Image> getImages() {
+        return Collections.unmodifiableSet(this.images);
+    }
+
+    public Optional<Image> getImage(UUID imageId) {
+        Objects.requireNonNull(imageId);
+        return this.images.stream().filter(image -> image.getId().equals(imageId)).findFirst();
+    }
+
+    public void changeMainImage(UUID imageId) {
+        Objects.requireNonNull(imageId);
+        // valida primeiramente
+        Image image = findImageById(imageId);
+        setMainImage(image);
+    }
+
+
+
+    // Devolve o id gerado porque quem chama precisa dele para localizar a imagem
+    // recem-criada - o Image nasce aqui dentro, o chamador so passou o nome.
+    public UUID addImage(String imageName) {
+        Objects.requireNonNull(imageName);
+
+        Image image = new Image(imageName);
+        this.images.add(image);
+
+        // A primeira imagem vira a principal sozinha. Sem isto, um produto com imagem
+        // ficaria sem mainImage ate alguem escolher uma, e a vitrine nao teria o que
+        // exibir - um estado valido em Java e invalido para o negocio.
+        if (this.mainImage == null) {
+            this.setMainImage(image);
+        }
+
+        return image.getId();
+    }
+
+    public void removeImage(UUID imageId) {
+        Objects.requireNonNull(imageId);
+        Image image = findImageById(imageId);
+        this.images.remove(image);
+
+        // A outra metade da mesma invariante: mainImage nunca aponta para imagem que
+        // saiu da colecao. Remover a principal PROMOVE outra; se nao sobrar nenhuma,
+        // volta a null - que e o unico caso legitimo de produto sem imagem principal.
+        // Qualquer uma serve como sucessora: nao ha criterio de negocio para a escolha.
+        if (image.equals(this.mainImage)) {
+            this.setMainImage(this.images.stream().findFirst().orElse(null));
+        }
+    }
+
+    private void setMainImage(Image mainImage) {
+        this.mainImage = mainImage;
+    }
+
     // operacao de negocio que substituiu os dois setters publicos de preco. existe porque
     // os precos NAO sao independentes: a regra so pode ser avaliada com o par completo em
     // maos, e quem chamasse setSalePrice sozinho conseguia deixar o agregado invalido.
@@ -312,6 +374,12 @@ public class Product extends AbstractAggregateRoot<Product> {
 
     private boolean pricesDidNotChange(BigDecimal oldRegularPrice, BigDecimal oldSalePrice) {
         return Objects.equals(this.regularPrice, oldRegularPrice) && Objects.equals(this.salePrice, oldSalePrice);
+    }
+
+    private Image findImageById(UUID imageId) {
+        return getImage(imageId).orElseThrow(() ->
+                new DomainException(String.format("Image of id %s was not found on product %s", imageId, id))
+        );
     }
 
     // Os cinco registradores abaixo so ENFILEIRAM o evento. Nada sai daqui ate alguem

@@ -19,7 +19,37 @@
       "_id": { "$uuid": "e0c4271d-0016-4a42-82fe-bf695a9fb9b8" },
       "name": "Laptops",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "46455c98-d396-420e-abfd-eb45bf6b7323"
+      },
+      "name": "fe7787a7-8f86-4a1b-8fd8-8add0b51aa35.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "46455c98-d396-420e-abfd-eb45bf6b7323"
+        },
+        "name": "fe7787a7-8f86-4a1b-8fd8-8add0b51aa35.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      },
+      {
+        "_id": {
+          "$uuid": "661c81f5-4308-4ecc-865d-45e07cf49725"
+        },
+        "name": "babb525b-776e-45a5-a3d6-7e63330306b1.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      },
+      {
+        "_id": {
+          "$uuid": "a4c6404c-8b2f-4da2-aa05-2b1e528412af"
+        },
+        "name": "ac8ded45-26c1-41f3-9ec4-0ff8c58366d7.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "2eea613a-3a11-46dd-95ee-2678c295559e" },
@@ -41,7 +71,23 @@
       "_id": { "$uuid": "e0c4271d-0016-4a42-82fe-bf695a9fb9b8" },
       "name": "Laptops",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "45305f7a-8e2f-4e27-93f5-705a901ed98b"
+      },
+      "name": "fe0b141d-96fc-4c63-b1f5-fc535e2874e8.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "45305f7a-8e2f-4e27-93f5-705a901ed98b"
+        },
+        "name": "fe0b141d-96fc-4c63-b1f5-fc535e2874e8.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "abdc585c-9153-49f0-b1f9-9f01cca6901c" },
@@ -63,7 +109,23 @@
       "_id": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
       "name": "Desktops",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "75166ca0-fb60-465a-9dd4-2da48dff6dd8"
+      },
+      "name": "513e2b9c-85f9-4245-8807-b2a54e3bdce1.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "75166ca0-fb60-465a-9dd4-2da48dff6dd8"
+        },
+        "name": "513e2b9c-85f9-4245-8807-b2a54e3bdce1.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "a8ce5aa8-0cbb-4a68-92e7-d43ec7a53b49" },
@@ -107,7 +169,23 @@
       "_id": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
       "name": "Desktops",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "da9da689-3587-4878-b571-531516a88e89"
+      },
+      "name": "d519e52c-fd35-48b9-85e9-c3e1deaa32cf.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "da9da689-3587-4878-b571-531516a88e89"
+        },
+        "name": "d519e52c-fd35-48b9-85e9-c3e1deaa32cf.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "19274f99-e0d2-40b1-9b3a-912cb0982f11" },
@@ -129,7 +207,30 @@
       "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
       "name": "Hardware",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "321884b8-3a6d-49de-b116-020ef575b95f"
+      },
+      "name": "a71a1121-1e75-4ed1-a3f2-fabe29ab95bd.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "321884b8-3a6d-49de-b116-020ef575b95f"
+        },
+        "name": "a71a1121-1e75-4ed1-a3f2-fabe29ab95bd.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      },
+      {
+        "_id": {
+          "$uuid": "4431811d-cd30-41df-99b7-4ab16fb49319"
+        },
+        "name": "ad96fad7-921f-4f0b-b4ac-020b91fb4b61.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "8fd9f73a-b0b6-4a4c-96b1-e1ba36602333" },
@@ -151,7 +252,23 @@
       "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
       "name": "Hardware",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "dee53ee0-8e65-48c6-8b92-527261f4b33d"
+      },
+      "name": "d9061b77-5336-4fb5-9397-a3cb92f5f785.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images":[
+      {
+        "_id": {
+          "$uuid": "dee53ee0-8e65-48c6-8b92-527261f4b33d"
+        },
+        "name": "d9061b77-5336-4fb5-9397-a3cb92f5f785.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "3a40e8a1-ec61-434b-92e5-b4dae61eddd0" },
@@ -173,7 +290,23 @@
       "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
       "name": "Hardware",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "3b8771e1-6d48-48ec-8e24-24ebb6cde61b"
+      },
+      "name": "6e920c7c-e8af-4b28-a4db-9ca05614194a.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "3b8771e1-6d48-48ec-8e24-24ebb6cde61b"
+        },
+        "name": "6e920c7c-e8af-4b28-a4db-9ca05614194a.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "7439c2b9-f14c-452d-86f4-505d211e4974" },
@@ -195,7 +328,23 @@
       "_id": { "$uuid": "ef5981cb-ed9b-42f0-a417-533cc43c605a" },
       "name": "Hardware",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "b6a93344-6a25-4cad-9ebb-ec328cc2dc6f"
+      },
+      "name": "0914a469-06e7-4275-afca-f9c71e8e056c.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "b6a93344-6a25-4cad-9ebb-ec328cc2dc6f"
+        },
+        "name": "0914a469-06e7-4275-afca-f9c71e8e056c.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "3b3ea346-959e-4844-ab32-62455802cb63" },
@@ -217,7 +366,23 @@
       "_id": { "$uuid": "d2468e17-35f2-46e7-b51d-24c01315ab29" },
       "name": "Cell Phones",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "e298b535-732b-48e3-9d28-f69ac712a999"
+      },
+      "name": "fd97856c-29c4-4349-8546-46d159f1f621.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "e298b535-732b-48e3-9d28-f69ac712a999"
+        },
+        "name": "fd97856c-29c4-4349-8546-46d159f1f621.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "a5638e2f-1b9a-4265-88fb-634dd5f5fe5d" },
@@ -239,7 +404,23 @@
       "_id": { "$uuid": "d2468e17-35f2-46e7-b51d-24c01315ab29" },
       "name": "Cell Phones",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "4768d9b2-621a-40b9-ae07-1d00275cd152"
+      },
+      "name": "d696d0fe-0ce5-497c-bcc5-0e2e679e3b11.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "4768d9b2-621a-40b9-ae07-1d00275cd152"
+        },
+        "name": "d696d0fe-0ce5-497c-bcc5-0e2e679e3b11.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   },
   {
     "_id": { "$uuid": "5805e415-1ca0-45e2-9764-6fd5d1eb2339" },
@@ -261,6 +442,22 @@
       "_id": { "$uuid": "c4edfdd5-c71e-47aa-8f00-2925abbbb75f" },
       "name": "Desktops",
       "enabled": true
-    }
+    },
+    "mainImage": {
+      "_id": {
+        "$uuid": "a6cfc0bf-7c65-455d-b2cc-b9247c3bcf81"
+      },
+      "name": "e12638c1-554e-4489-b9a4-2ad890e3d63f.jpg",
+      "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+    },
+    "images": [
+      {
+        "_id": {
+          "$uuid": "a6cfc0bf-7c65-455d-b2cc-b9247c3bcf81"
+        },
+        "name": "e12638c1-554e-4489-b9a4-2ad890e3d63f.jpg",
+        "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
+      }
+    ]
   }
 ]

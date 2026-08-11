@@ -41,6 +41,8 @@ public class ProductSummaryOutput {
     // pontuação de buscas textuais, do mais relevante ao menor
     private Float score;
 
+    private ImageOutput mainImage;
+
     // slug derivado em Java, na hora de serializar - o Jackson chama este getter e publica
     // o campo "slug" no JSON, sem ele existir na classe nem no documento.
     // ficou de fora do $project de proposito: tirar acento no Mongo exigiria uma cadeia de

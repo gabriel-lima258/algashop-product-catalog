@@ -39,6 +39,7 @@ ext {
     // Este caminho é passado para a task 'asciidoctor' como atributo '{snippets}',
     // que é então referenciado nos arquivos .adoc com: include::{snippets}/...
     set('snippetsDir', file("build/generated-snippets"))
+    set('springCloudAwsVersion', "4.0.0")
 }
 
 configurations {
@@ -66,6 +67,9 @@ dependencies {
     implementation 'org.modelmapper:modelmapper:3.2.6'
     implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.1'
     implementation 'org.apache.commons:commons-lang3:3.20.0'
+    implementation 'commons-io:commons-io:2.21.0' // dependencia para extrair type dos arquivos
+    implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:${springCloudAwsVersion}") // cloud aws
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3' // s3 bucket
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
