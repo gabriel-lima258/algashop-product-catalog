@@ -32,6 +32,9 @@ import com.algaworks.algashop.product.catalog.application.product.query.ProductD
 import com.algaworks.algashop.product.catalog.application.product.query.ProductQueryService;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductSummaryOutput;
 import com.algaworks.algashop.product.catalog.domain.category.CategoryNotFoundException;
+import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanReadProducts;
+import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanWriteProducts;
+import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanWriteProductsStock;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
@@ -52,6 +55,7 @@ public class ProductController {
     private final ProductManagementApplicationService productManagementApplicationService;
 
     @GetMapping("/{productId}")
+    @CanReadProducts
     public ResponseEntity<ProductDetailOutput> findById(@PathVariable UUID productId) {
         ProductDetailOutput product = productQueryService.findById(productId);
         return ResponseEntity.ok()
@@ -62,12 +66,14 @@ public class ProductController {
     }
 
     @GetMapping
+    @CanReadProducts
     public PageModel<ProductSummaryOutput> filter(ProductFilter filter) {
         return productQueryService.filter(filter);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @CanWriteProducts
     public ProductDetailOutput create(@RequestBody @Valid ProductInput input) {
         try {
             return productManagementApplicationService.create(input);
@@ -77,18 +83,21 @@ public class ProductController {
     }
 
     @PutMapping("/{productId}")
+    @CanWriteProducts
     public ProductDetailOutput update(@PathVariable UUID productId, @RequestBody @Valid ProductInput input) {
         return productManagementApplicationService.update(productId, input);
     }
 
     @DeleteMapping("/{productId}/enable")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @CanWriteProducts
     public void disable(@PathVariable UUID productId) {
         productManagementApplicationService.disable(productId);
     }
 
     @PutMapping("/{productId}/enable")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @CanWriteProducts
     public void enable(@PathVariable UUID productId) {
         productManagementApplicationService.enable(productId);
     }
@@ -102,12 +111,14 @@ public class ProductController {
     // (InsufficientStockException). Ver docs/02-persistencia/concorrencia-e-atomicidade.md
     @PostMapping("/{productId}/restock")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @CanWriteProductsStock
     public void restock(@PathVariable UUID productId, @RequestBody @Valid ProductQuantityModel productQuantityModel) {
         productManagementApplicationService.restock(productId, productQuantityModel.getQuantity());
     }
 
     @PostMapping("/{productId}/withdraw")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @CanWriteProductsStock
     public void withdraw(@PathVariable UUID productId, @RequestBody @Valid ProductQuantityModel productQuantityModel) {
         productManagementApplicationService.withdraw(productId, productQuantityModel.getQuantity());
     }

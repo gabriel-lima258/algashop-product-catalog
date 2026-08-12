@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -45,6 +47,15 @@ import static org.mockito.Mockito.doThrow;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(TestContainerMongoDBConfig.class)
 class StockTransactionIT {
+
+    // O @EnableWebSecurity da ProductCatalogSecurityConfig monta o SecurityFilterChain na
+    // subida do contexto, e oauth2ResourceServer().jwt() exige um JwtDecoder. Em teste nao
+    // ha issuer-uri configurado - de proposito, para nenhum *IT depender do authorization
+    // server de pe -, entao o bean precisa vir daqui. Ele nunca e chamado: este teste nao
+    // passa por HTTP.
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
+
 
     private static final UUID EXISTING_PRODUCT = UUID.fromString("19274f99-e0d2-40b1-9b3a-912cb0982f11");
     private static final int INITIAL_STOCK = 50;

@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Sort;
@@ -29,6 +30,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Cobre a cadeia inteira que o 400 de ?sortByProperty=salePrice&sortDirection=desc atravessa:
 // conversores registrados no WebConfig -> binding do command object -> ApiExceptionHandler.
 // Nenhuma dessas pecas sozinha provaria a correcao.
+// addFilters = false: este teste e sobre BINDING de parametro de ordenacao, nao sobre
+// seguranca. Com o starter de seguranca no classpath, o @WebMvcTest autoconfigura a
+// cadeia PADRAO do Boot (nao a nossa ProductCatalogSecurityConfig) e toda requisicao
+// vira 401 antes de o controller existir - as asercoes de 400 viravam 401.
+// A cobertura de seguranca deste controller esta em ProductControllerSecurityTest.
+@AutoConfigureMockMvc(addFilters = false)
 @WebMvcTest(controllers = ProductController.class)
 @Import({WebConfig.class, ApiExceptionHandler.class})
 @ImportAutoConfiguration(MessageSourceAutoConfiguration.class)

@@ -268,6 +268,30 @@ algashop:
 
 Detalhes em [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/armazenamento-de-arquivos.md).
 
+
+### Segurança — escopos exigidos
+
+Este serviço é um **resource server**: toda rota exige `Authorization: Bearer <jwt>`, validado contra o issuer `http://algashop-authorization-server:9000`. Só `/actuator/health/**` é público.
+
+| Rota | Escopo |
+|---|---|
+| `GET /api/v1/products`, `/products/{id}`, imagens | `products:read` |
+| `POST`/`PUT`/`DELETE` de produto, imagens e upload | `products:write` |
+| `POST /api/v1/products/{id}/restock` e `/withdraw` | **`products:stock:write`** |
+| `GET /api/v1/categories`, `/categories/{id}` | `categories:read` |
+| `POST`/`PUT`/`DELETE` de categoria | `categories:write` |
+
+Estoque tem escopo **próprio**, separado da escrita de catálogo: quem integra estoque não ganha de brinde o direito de reescrever preço. Há um teste provando que `products:write` **não** abre `/restock` nem `/withdraw`.
+
+```bash
+TOKEN=$(curl -s -u algashop-test:testing123 -d grant_type=client_credentials \
+  http://localhost:9000/oauth2/token | jq -r .access_token)
+
+curl -s -H "Authorization: Bearer $TOKEN" localhost:8083/api/v1/...
+```
+
+Sem token → **401**. Com token e sem o escopo → **403**. Detalhes em [Resource servers e escopos](https://github.com/gabriel-lima258/algashop-docs/blob/main/05-seguranca/resource-server-e-escopos.md).
+
 ---
 
 ## Documentação
@@ -282,6 +306,7 @@ Este é o serviço mais documentado do projeto. Em [`algashop-docs`](https://git
 - [Cache](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/cache.md) — cache-aside × write-through, invalidação e por que a idade de um dado é a soma das camadas
 - [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/armazenamento-de-arquivos.md) — URL pré-assinada e o upload que não passa pelo backend
 - [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/health-checks.md) — liveness × readiness e o status DEGRADED
+- [Resource servers e escopos](https://github.com/gabriel-lima258/algashop-docs/blob/main/05-seguranca/resource-server-e-escopos.md) — escopo por rota, 401 × 403 e a matriz de testes
 - [Redis na prática](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/redis.md) — eviction, TTL, inspeção e a armadilha da senha vazia
 - [Consultas com Criteria](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/consultas-mongo-criteria.md) · [Índices](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/indices-mongo.md) · [Aggregation Pipeline](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/agregacoes-mongo.md)
 - [Carga de dados](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/carga-de-dados-mongo.md) · [Ambiente local](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/ambiente-local.md)

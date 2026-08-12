@@ -30,6 +30,8 @@ import com.algaworks.algashop.product.catalog.application.category.query.Categor
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryFilter;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryQueryService;
 import com.algaworks.algashop.product.catalog.application.util.PageModel;
+import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanReadCategories;
+import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanWriteCategories;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
@@ -52,6 +54,7 @@ public class CategoryController {
 
     // cache http client side
     @GetMapping("/{categoryId}")
+    @CanReadCategories
     public ResponseEntity<CategoryDetailOutput> findById(@PathVariable UUID categoryId) {
         CategoryDetailOutput category = categoryQueryService.findById(categoryId);
         return ResponseEntity.ok()
@@ -62,6 +65,7 @@ public class CategoryController {
     }
 
     @GetMapping
+    @CanReadCategories
     public ResponseEntity<PageModel<CategoryDetailOutput>> filter(CategoryFilter filter, WebRequest webRequest) {
 
         // se não cacheado deixa consultar o banco sem cache
@@ -88,12 +92,14 @@ public class CategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @CanWriteCategories
     public CategoryDetailOutput create(@RequestBody @Valid CategoryInput input) {
         UUID categoryId = categoryManagementApplicationService.create(input);
         return categoryQueryService.findById(categoryId);
     }
 
     @PutMapping("/{categoryId}")
+    @CanWriteCategories
     public CategoryDetailOutput update(@PathVariable UUID categoryId, @RequestBody @Valid CategoryInput input) {
         categoryManagementApplicationService.update(categoryId, input);
         return categoryQueryService.findById(categoryId);
@@ -101,6 +107,7 @@ public class CategoryController {
 
     @DeleteMapping("/{categoryId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @CanWriteCategories
     public void update(@PathVariable UUID categoryId) {
         categoryManagementApplicationService.disable(categoryId);
     }

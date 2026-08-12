@@ -21,6 +21,11 @@ spring:
       s3:
         enabled: true
         path-style-access-enabled: true # em prod não precisa, facilita o uso em local
+  security: # apontamos o resource para authorization server para ter validação e busca de chave públicas
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://algashop-authorization-server:9000 # url de authorization server
 
 logging:
   level:
