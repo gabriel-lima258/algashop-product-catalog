@@ -1,4 +1,4 @@
-package com.algaworks.algashop.product.catalog.infrastructure.security;
+package com.algaworks.algashop.product.catalog.infrastructure.security.check;
 
 
 import org.springframework.security.access.prepost.PreAuthorize;

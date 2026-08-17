@@ -1,5 +1,6 @@
 package com.algaworks.algashop.product.catalog.infrastructure.persistence;
 
+import com.algaworks.algashop.product.catalog.application.security.SecurityCheckApplicationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -23,9 +24,13 @@ public class SpringDataAuditingConfig {
         return () -> Optional.of(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS));
     }
 
-    // auditoria do usuário
     @Bean
-    public AuditorAware<UUID> auditorProvider() {
-        return () -> Optional.of(UUID.randomUUID());
+    public AuditorAware<UUID> auditorProvider(SecurityCheckApplicationService securityCheck) {
+        return () -> {
+            if (!securityCheck.isAuthenticated() || securityCheck.isMachineAuthenticated()) {
+                return Optional.empty();
+            }
+            return Optional.of(securityCheck.getAuthenticatedUserId());
+        };
     }
 }

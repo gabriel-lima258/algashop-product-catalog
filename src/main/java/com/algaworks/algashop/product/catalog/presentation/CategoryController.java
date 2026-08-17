@@ -30,8 +30,8 @@ import com.algaworks.algashop.product.catalog.application.category.query.Categor
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryFilter;
 import com.algaworks.algashop.product.catalog.application.category.query.CategoryQueryService;
 import com.algaworks.algashop.product.catalog.application.util.PageModel;
-import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanReadCategories;
-import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanWriteCategories;
+import com.algaworks.algashop.product.catalog.infrastructure.security.check.SecurityAnnotations.CanReadCategories;
+import com.algaworks.algashop.product.catalog.infrastructure.security.check.SecurityAnnotations.CanWriteCategories;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;

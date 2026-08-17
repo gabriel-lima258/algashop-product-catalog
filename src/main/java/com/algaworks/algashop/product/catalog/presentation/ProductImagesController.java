@@ -4,8 +4,8 @@ import com.algaworks.algashop.product.catalog.application.product.management.Ima
 import com.algaworks.algashop.product.catalog.application.product.management.ProductImageManagementApplicationService;
 import com.algaworks.algashop.product.catalog.application.product.query.ImageOutput;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductImageQueryService;
-import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanReadProducts;
-import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanWriteProducts;
+import com.algaworks.algashop.product.catalog.infrastructure.security.check.SecurityAnnotations.CanReadProducts;
+import com.algaworks.algashop.product.catalog.infrastructure.security.check.SecurityAnnotations.CanWriteProducts;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -3,7 +3,7 @@ package com.algaworks.algashop.product.catalog.presentation;
 import com.algaworks.algashop.product.catalog.application.upload.UploadRequestApplicationService;
 import com.algaworks.algashop.product.catalog.application.upload.UploadRequestInput;
 import com.algaworks.algashop.product.catalog.application.upload.UploadResponseOutput;
-import com.algaworks.algashop.product.catalog.infrastructure.security.SecurityAnnotations.CanWriteProducts;
+import com.algaworks.algashop.product.catalog.infrastructure.security.check.SecurityAnnotations.CanWriteProducts;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
