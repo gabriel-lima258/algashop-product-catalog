@@ -25,6 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.util.stream.Stream;
 
@@ -32,19 +33,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 /**
- * A matriz de autorizacao do catalogo: para CADA rota anotada, tres perguntas.
+ * A matriz de autorizacao do catalogo. Depois do endurecimento por papel, as rotas se
+ * dividem em TRES grupos com regras proprias:
  *
- *   sem token       -> 401 (nao autenticado)
- *   escopo errado   -> 403 (autenticado, sem permissao)
- *   escopo correto  -> passa pela seguranca
+ *   leitura           -> so escopo (m2m sem role precisa passar: ecommerce-m2m, ordering)
+ *   escrita comum     -> escopo E NAO ter papel CUSTOMER (maquina e perfis internos passam)
+ *   escrita de ESTOQUE -> escopo E papel MANAGER (maquina, OPERATOR e CUSTOMER ficam fora)
  *
- * Ver o javadoc do AuthorizationMatrixTest do ordering para as tres decisoes de desenho
- * que valem para os tres servicos: importar a SecurityConfig REAL, o JwtDecoder mockado
- * que existe so para o contexto subir, e a asercao positiva ser "nao e 401 nem 403".
+ * "Token de maquina" aqui e simplesmente um token sem ROLE_* - o claim role so existe em
+ * authorization_code, e hasRole so olha authorities; nao ha necessidade de simular aud/sub.
  *
- * Especifico do catalogo: as rotas de estoque exigem products:stock:write, e NAO
- * products:write. Separar escrita de catalogo de escrita de saldo e deliberado - quem
- * integra estoque nao deveria ganhar de brinde o direito de reescrever preco.
+ * Ver o javadoc do AuthorizationMatrixTest do ordering para as decisoes de desenho comuns
+ * aos servicos: importar a SecurityConfig REAL, o JwtDecoder mockado que existe so para o
+ * contexto subir, e a asercao positiva ser "nao e 401 nem 403".
  */
 @WebMvcTest(controllers = {
         ProductController.class,
@@ -92,42 +93,61 @@ class AuthorizationMatrixTest {
     @MockitoBean private ProductImageQueryService productImageQueryService;
     @MockitoBean private UploadRequestApplicationService uploadRequestApplicationService;
 
-    static Stream<Arguments> routes() {
+    private static RequestPostProcessor token(String... authorities) {
+        return jwt().authorities(Stream.of(authorities)
+                .map(SimpleGrantedAuthority::new)
+                .toArray(SimpleGrantedAuthority[]::new));
+    }
+
+    // -------------------------------------------------------------------------
+    // Grupos de rotas
+    // -------------------------------------------------------------------------
+
+    static Stream<Arguments> readRoutes() {
         return Stream.of(
-                // PRODUTOS
                 Arguments.of(HttpMethod.GET, "/api/v1/products", "SCOPE_products:read", null, null),
                 Arguments.of(HttpMethod.GET, "/api/v1/products/" + PRODUCT_ID, "SCOPE_products:read", null, null),
+                Arguments.of(HttpMethod.GET, "/api/v1/categories", "SCOPE_categories:read", null, null),
+                Arguments.of(HttpMethod.GET, "/api/v1/categories/" + CATEGORY_ID, "SCOPE_categories:read", null, null),
+                Arguments.of(HttpMethod.GET, "/api/v1/products/" + PRODUCT_ID + "/images", "SCOPE_products:read", null, null),
+                Arguments.of(HttpMethod.GET, "/api/v1/products/" + PRODUCT_ID + "/images/" + IMAGE_ID, "SCOPE_products:read", null, null)
+        );
+    }
+
+    static Stream<Arguments> writeRoutes() {
+        return Stream.of(
                 Arguments.of(HttpMethod.POST, "/api/v1/products", "SCOPE_products:write", JSON, PRODUCT_BODY),
                 Arguments.of(HttpMethod.PUT, "/api/v1/products/" + PRODUCT_ID, "SCOPE_products:write", JSON, PRODUCT_BODY),
                 Arguments.of(HttpMethod.PUT, "/api/v1/products/" + PRODUCT_ID + "/enable", "SCOPE_products:write", null, null),
                 Arguments.of(HttpMethod.DELETE, "/api/v1/products/" + PRODUCT_ID + "/enable", "SCOPE_products:write", null, null),
-
-                // ESTOQUE - escopo proprio, separado da escrita de catalogo
-                Arguments.of(HttpMethod.POST, "/api/v1/products/" + PRODUCT_ID + "/restock", "SCOPE_products:stock:write", JSON, STOCK_BODY),
-                Arguments.of(HttpMethod.POST, "/api/v1/products/" + PRODUCT_ID + "/withdraw", "SCOPE_products:stock:write", JSON, STOCK_BODY),
-
-                // CATEGORIAS
-                Arguments.of(HttpMethod.GET, "/api/v1/categories", "SCOPE_categories:read", null, null),
-                Arguments.of(HttpMethod.GET, "/api/v1/categories/" + CATEGORY_ID, "SCOPE_categories:read", null, null),
                 Arguments.of(HttpMethod.POST, "/api/v1/categories", "SCOPE_categories:write", JSON, CATEGORY_BODY),
                 Arguments.of(HttpMethod.PUT, "/api/v1/categories/" + CATEGORY_ID, "SCOPE_categories:write", JSON, CATEGORY_BODY),
                 Arguments.of(HttpMethod.DELETE, "/api/v1/categories/" + CATEGORY_ID, "SCOPE_categories:write", null, null),
-
-                // IMAGENS - herdam o escopo de produto, nao tem um proprio
-                Arguments.of(HttpMethod.GET, "/api/v1/products/" + PRODUCT_ID + "/images", "SCOPE_products:read", null, null),
-                Arguments.of(HttpMethod.GET, "/api/v1/products/" + PRODUCT_ID + "/images/" + IMAGE_ID, "SCOPE_products:read", null, null),
                 Arguments.of(HttpMethod.POST, "/api/v1/products/" + PRODUCT_ID + "/images", "SCOPE_products:write", JSON, IMAGE_BODY),
                 Arguments.of(HttpMethod.DELETE, "/api/v1/products/" + PRODUCT_ID + "/images/" + IMAGE_ID, "SCOPE_products:write", null, null),
                 Arguments.of(HttpMethod.PUT, "/api/v1/products/" + PRODUCT_ID + "/images/" + IMAGE_ID + "/primary", "SCOPE_products:write", null, null),
-
-                // UPLOAD - a Fase 19 registrou este endpoint como "aberto, emite permissao
-                // de escrita no bucket". A pendencia fecha aqui.
                 Arguments.of(HttpMethod.POST, "/api/v1/upload-requests", "SCOPE_products:write", JSON, UPLOAD_BODY)
         );
     }
 
+    // ESTOQUE - escopo proprio, separado da escrita de catalogo
+    static Stream<Arguments> stockRoutes() {
+        return Stream.of(
+                Arguments.of(HttpMethod.POST, "/api/v1/products/" + PRODUCT_ID + "/restock", "SCOPE_products:stock:write", JSON, STOCK_BODY),
+                Arguments.of(HttpMethod.POST, "/api/v1/products/" + PRODUCT_ID + "/withdraw", "SCOPE_products:stock:write", JSON, STOCK_BODY)
+        );
+    }
+
+    static Stream<Arguments> allRoutes() {
+        return Stream.of(readRoutes(), writeRoutes(), stockRoutes()).flatMap(s -> s);
+    }
+
+    // -------------------------------------------------------------------------
+    // Todas as rotas: sem token -> 401; sem o escopo -> 403 (papel nao substitui escopo)
+    // -------------------------------------------------------------------------
+
     @ParameterizedTest(name = "{0} {1} sem token -> 401")
-    @MethodSource("routes")
+    @MethodSource("allRoutes")
     void shouldRejectRequestWithoutToken(HttpMethod method, String path, String scope,
                                          String contentType, String body) throws Exception {
         mockMvc.perform(request(method, path, contentType, body))
@@ -135,24 +155,107 @@ class AuthorizationMatrixTest {
                         .as("rota sem token deveria ser 401").isEqualTo(401));
     }
 
-    @ParameterizedTest(name = "{0} {1} com escopo errado -> 403")
-    @MethodSource("routes")
+    @ParameterizedTest(name = "{0} {1} com escopo errado -> 403 mesmo sendo MANAGER")
+    @MethodSource("allRoutes")
     void shouldRejectRequestWithUnrelatedScope(HttpMethod method, String path, String scope,
                                                String contentType, String body) throws Exception {
         mockMvc.perform(request(method, path, contentType, body)
-                        .with(jwt().authorities(new SimpleGrantedAuthority(UNRELATED_SCOPE))))
+                        .with(token(UNRELATED_SCOPE, "ROLE_MANAGER")))
                 .andExpect(result -> assertThat(result.getResponse().getStatus())
-                        .as("token autenticado sem o escopo %s deveria ser 403", scope).isEqualTo(403));
+                        .as("token sem o escopo %s deveria ser 403, papel nao substitui escopo", scope)
+                        .isEqualTo(403));
     }
 
-    @ParameterizedTest(name = "{0} {1} com {2} -> passa pela seguranca")
-    @MethodSource("routes")
-    void shouldAllowRequestWithRequiredScope(HttpMethod method, String path, String scope,
-                                             String contentType, String body) throws Exception {
+    // -------------------------------------------------------------------------
+    // Leitura: so escopo (m2m sem role continua lendo o catalogo)
+    // -------------------------------------------------------------------------
+
+    @ParameterizedTest(name = "{0} {1} com {2} sem role -> passa")
+    @MethodSource("readRoutes")
+    void shouldAllowReadWithScopeOnly(HttpMethod method, String path, String scope,
+                                      String contentType, String body) throws Exception {
         mockMvc.perform(request(method, path, contentType, body)
-                        .with(jwt().authorities(new SimpleGrantedAuthority(scope))))
+                        .with(token(scope)))
                 .andExpect(result -> assertThat(result.getResponse().getStatus())
-                        .as("com o escopo %s a requisicao nao deveria parar na seguranca", scope)
+                        .as("leitura com o escopo %s nao deveria parar na seguranca", scope)
+                        .isNotIn(401, 403));
+    }
+
+    // -------------------------------------------------------------------------
+    // Escrita comum: escopo + NAO ser CUSTOMER
+    // -------------------------------------------------------------------------
+
+    // a regra nova central: o escopo certo na mao de um CUSTOMER nao abre a escrita
+    @ParameterizedTest(name = "{0} {1} com {2} mas papel CUSTOMER -> 403")
+    @MethodSource("writeRoutes")
+    void shouldRejectCustomerOnWriteRoutes(HttpMethod method, String path, String scope,
+                                           String contentType, String body) throws Exception {
+        mockMvc.perform(request(method, path, contentType, body)
+                        .with(token(scope, "ROLE_CUSTOMER")))
+                .andExpect(result -> assertThat(result.getResponse().getStatus())
+                        .as("papel CUSTOMER com escopo %s deveria ser 403", scope)
+                        .isEqualTo(403));
+    }
+
+    @ParameterizedTest(name = "{0} {1} com {2} sem role (maquina) -> passa")
+    @MethodSource("writeRoutes")
+    void shouldAllowMachineOnWriteRoutes(HttpMethod method, String path, String scope,
+                                         String contentType, String body) throws Exception {
+        mockMvc.perform(request(method, path, contentType, body)
+                        .with(token(scope)))
+                .andExpect(result -> assertThat(result.getResponse().getStatus())
+                        .as("token de maquina com %s nao deveria parar na seguranca", scope)
+                        .isNotIn(401, 403));
+    }
+
+    @ParameterizedTest(name = "{0} {1} com {2} e perfil interno -> passa")
+    @MethodSource("writeRoutes")
+    void shouldAllowInternalProfilesOnWriteRoutes(HttpMethod method, String path, String scope,
+                                                  String contentType, String body) throws Exception {
+        for (String role : new String[]{"ROLE_MANAGER", "ROLE_OPERATOR"}) {
+            mockMvc.perform(request(method, path, contentType, body)
+                            .with(token(scope, role)))
+                    .andExpect(result -> assertThat(result.getResponse().getStatus())
+                            .as("%s com escopo %s nao deveria parar na seguranca", role, scope)
+                            .isNotIn(401, 403));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Estoque: escopo + papel MANAGER, e nada menos que isso
+    // -------------------------------------------------------------------------
+
+    // maquina (sem role), OPERATOR e CUSTOMER ficam fora, mesmo com o escopo certo -
+    // e o algashop-test (client_credentials) que declara products:stock:write no YAML
+    // do authorization server cai exatamente no caso "sem role"
+    @ParameterizedTest(name = "{0} {1} com {2} sem papel MANAGER -> 403")
+    @MethodSource("stockRoutes")
+    void shouldRejectStockWithoutManagerRole(HttpMethod method, String path, String scope,
+                                             String contentType, String body) throws Exception {
+        String[][] deniedTokens = {
+                {scope},                    // maquina: escopo sem role nenhuma
+                {scope, "ROLE_OPERATOR"},
+                {scope, "ROLE_CUSTOMER"}
+        };
+
+        for (String[] authorities : deniedTokens) {
+            mockMvc.perform(request(method, path, contentType, body)
+                            .with(token(authorities)))
+                    .andExpect(result -> assertThat(result.getResponse().getStatus())
+                            .as("estoque com %s deveria ser 403, so MANAGER opera estoque",
+                                    String.join("+", authorities))
+                            .isEqualTo(403));
+        }
+    }
+
+    @ParameterizedTest(name = "{0} {1} com {2} e papel MANAGER -> passa")
+    @MethodSource("stockRoutes")
+    void shouldAllowManagerOnStockRoutes(HttpMethod method, String path, String scope,
+                                         String contentType, String body) throws Exception {
+        mockMvc.perform(request(method, path, contentType, body)
+                        .with(token(scope, "ROLE_MANAGER")))
+                .andExpect(result -> assertThat(result.getResponse().getStatus())
+                        .as("MANAGER com %s nao deveria parar na seguranca", scope)
                         .isNotIn(401, 403));
     }
 
@@ -166,7 +269,7 @@ class AuthorizationMatrixTest {
     void shouldNotAllowStockOperationsWithPlainWriteScope(String suffix) throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/" + PRODUCT_ID + suffix)
                         .contentType(JSON).content(STOCK_BODY)
-                        .with(jwt().authorities(new SimpleGrantedAuthority("SCOPE_products:write"))))
+                        .with(token("SCOPE_products:write", "ROLE_MANAGER")))
                 .andExpect(result -> assertThat(result.getResponse().getStatus())
                         .as("escrita de catalogo nao deveria autorizar operacao de estoque")
                         .isEqualTo(403));

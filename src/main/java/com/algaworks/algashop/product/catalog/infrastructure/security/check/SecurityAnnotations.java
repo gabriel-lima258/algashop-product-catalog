@@ -23,6 +23,15 @@ import java.lang.annotation.Target;
 // O prefixo SCOPE_ nao e escolha nossa: o JwtGrantedAuthoritiesConverter, padrao do
 // resource server, le o claim "scope" do token e prefixa cada valor com "SCOPE_" ao
 // transformar em GrantedAuthority. Por isso hasAuthority('SCOPE_x') e nao hasScope('x').
+// Divisao de publicos das ESCRITAS (as leituras seguem so com escopo, porque o catalogo
+// e lido por clients m2m - ecommerce-m2m, ordering - que nao carregam papel):
+//
+//   escrita de catalogo (products/categories/images/upload) -> escopo e NAO ser CUSTOMER.
+//     Token de maquina passa (nao tem role); cliente da loja nunca passa, mesmo que um
+//     token com o escopo vaze para ele.
+//   escrita de ESTOQUE -> escopo e papel MANAGER. So humano MANAGER: client_credentials
+//     nao carrega o claim role, entao maquina fica fora por construcao - e OPERATOR
+//     tambem, coerente com a tabela auth_user_type_client_scope do authorization server.
 public class SecurityAnnotations {
 
     @Target({ElementType.METHOD, ElementType.TYPE})
@@ -32,12 +41,12 @@ public class SecurityAnnotations {
 
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize("hasAuthority('SCOPE_products:write')")
+    @PreAuthorize("hasAuthority('SCOPE_products:write') and not hasRole('CUSTOMER')")
     public @interface CanWriteProducts {}
 
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize("hasAuthority('SCOPE_products:stock:write')")
+    @PreAuthorize("hasAuthority('SCOPE_products:stock:write') and hasRole('MANAGER')")
     public @interface CanWriteProductsStock {}
 
     @Target({ElementType.METHOD, ElementType.TYPE})
@@ -47,6 +56,6 @@ public class SecurityAnnotations {
 
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize("hasAuthority('SCOPE_categories:write')")
+    @PreAuthorize("hasAuthority('SCOPE_categories:write') and not hasRole('CUSTOMER')")
     public @interface CanWriteCategories {}
 }

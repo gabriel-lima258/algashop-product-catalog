@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // seguranca. Com o starter de seguranca no classpath, o @WebMvcTest autoconfigura a
 // cadeia PADRAO do Boot (nao a nossa ProductCatalogSecurityConfig) e toda requisicao
 // vira 401 antes de o controller existir - as asercoes de 400 viravam 401.
-// A cobertura de seguranca deste controller esta em ProductControllerSecurityTest.
+// A cobertura de seguranca deste controller esta em AuthorizationMatrixTest.
 @AutoConfigureMockMvc(addFilters = false)
 @WebMvcTest(controllers = ProductController.class)
 @Import({WebConfig.class, ApiExceptionHandler.class})
