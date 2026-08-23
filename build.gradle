@@ -71,6 +71,8 @@ dependencies {
     implementation 'commons-io:commons-io:2.21.0' // dependencia para extrair type dos arquivos
     implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:${springCloudAwsVersion}") // cloud aws
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3' // s3 bucket
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-secrets-manager'
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'

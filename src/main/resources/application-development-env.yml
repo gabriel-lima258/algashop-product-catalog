@@ -1,15 +1,23 @@
+# config.import traz os secrets e parameters da aws (LocalStack) para este arquivo env.
+# O seed é feito pelo etc/aws/init.sh (parameters.csv / secrets.csv).
+
 spring:
+  config:
+    import:
+      - aws-secretsmanager:/secret/algashop/product-catalog/redis?prefix=catalog.secrets.redis.
+      - aws-parameterstore:/config/algashop/product-catalog?prefix=catalog.params
+      - aws-parameterstore:/config/algashop/shared?prefix=shared.params
   cache:
     type: redis
   mongodb:
-    uri: mongodb://localhost:27017,localhost:27018,localhost:27019/product_catalog?replicaSet=rs0
+    uri: ${catalog.params.mongodb.uri}
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: algashop
-      database: 0
-      timeout: 600
+      host: ${catalog.params.redis.host}
+      port: ${catalog.params.redis.port}
+      password: ${catalog.secrets.redis.password}
+      database: ${catalog.params.redis.database}
+      timeout: ${catalog.params.redis.timeout}
   cloud:
     aws:
       region:
@@ -25,7 +33,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://auth.algashop.local:9000 # url de authorization server
+          issuer-uri: ${shared.params.auth-server-url} # url de authorization server
 
 logging:
   level:
@@ -36,16 +44,15 @@ logging:
 
 algashop:
   data-load:
-    enabled: true
-    auto-drop: true
+    enabled: ${catalog.params.data-load.enabled}
+    auto-drop: ${catalog.params.data-load.auto-drop}
     sources:
       - location: db/testdata/categories.json
         collection: categories
       - location: db/testdata/products.json
         collection: products
   mapping:
-    image-storage-url: http://algashop-localstack:4566/algashop-product-image
+    image-storage-url: ${catalog.params.mapping.image-storage-url}
   storage:
     s3:
-      bucket-name: algashop-product-image
-
+      bucket-name: ${catalog.params.storage.s3.bucket-name}
