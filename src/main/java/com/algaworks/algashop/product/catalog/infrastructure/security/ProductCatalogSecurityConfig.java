@@ -18,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 // houver front, isto volta - e configurado, nao apenas religado.
 // STATELESS: nenhuma sessao, nenhum JSESSIONID. Cada requisicao se identifica
 // sozinha pelo token.
+// habilita o endpoint eureka "/actuator/info/**"
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -31,7 +32,7 @@ public class ProductCatalogSecurityConfig {
             .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/actuator/health/**").permitAll()
+                    .requestMatchers("/actuator/health/**", "/actuator/info/**").permitAll()
                     .anyRequest().authenticated()) // Fecha por padrao: rota nova nasce protegida
             // Liga a validacao de JWT. O issuer vem de
             // spring.security.oauth2.resourceserver.jwt.issuer-uri

@@ -41,6 +41,9 @@ logging:
 #    org.mongodb.driver.protocol.query: DEBUG
 #    org.mongodb.driver.connection: DEBUG
     org.mongodb.driver.cluster: OFF
+    com.netflix.discovery.DiscoveryClient: OFF # desativa error eureka em dev
+    com.netflix.discovery: OFF
+    com.netflix.eureka: OFF
 
 algashop:
   data-load:
@@ -56,3 +59,13 @@ algashop:
   storage:
     s3:
       bucket-name: ${catalog.params.storage.s3.bucket-name}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${shared.params.service-registry-url}/eureka
+    healthcheck:
+      enabled: true # habilita o health em eureka para status de serviço dentro de eureka
+  instance:
+    instanceId: ${random.uuid} # cada instancia replicada ganha um id unico
+    prefer-ip-address: true # configura rede alcançável via docker
