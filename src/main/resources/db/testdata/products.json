@@ -459,5 +459,27 @@
         "_class": "com.algaworks.algashop.product.catalog.domain.product.Image"
       }
     ]
+  },
+  {
+    "_id": { "$uuid": "fffe6ec2-7103-48b3-8e4f-3b58e43fb75a" },
+    "addedAt": { "$date": "2024-06-14T19:46:33.013Z" },
+    "updatedAt": { "$date": "2024-06-14T20:17:51.362Z" },
+    "version": { "$numberLong": "2" },
+    "name": "Notebook X11",
+    "brand": "QuantumTech",
+    "regularPrice": { "$numberDecimal": "1000.00" },
+    "salePrice": { "$numberDecimal": "1000.00" },
+    "enabled": true,
+    "discountPercentageRounded": 0,
+    "quantityInStock": 50,
+    "description": "15-inch laptop, Intel Core i9, 32GB RAM, 1TB SSD, NVIDIA GeForce RTX 3080",
+    "_class": "com.algaworks.algashop.product.catalog.domain.product.Product",
+    "createdByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "lastModifiedByUserId": { "$uuid": "019ac149-6c80-7842-aa23-781d8d390f87" },
+    "category": {
+      "_id": { "$uuid": "e0c4271d-0016-4a42-82fe-bf695a9fb9b8" },
+      "name": "Laptops",
+      "enabled": true
+    }
   }
 ]
