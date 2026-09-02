@@ -34,6 +34,21 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${shared.params.auth-server-url} # url de authorization server
+  kafka:
+    bootstrap-servers: algashop-kafka-1:9092,algashop-kafka-2:9093,algashop-kafka-3:9094
+    #ponto inicial de conexão
+    admin:
+      fail-fast: true # Falha rápida caso não consiga se conectar ao cluster
+      auto-create: true # Permite a criação automática de tópicos caso não existam
+      modify-topic-configs: false # Impede a modificação de configurações de tópicos existentes
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer # chave String
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer # valor Json
+      properties:
+        spring.json.type.mapping: # customiza o type id do path completo com somente a referencia da classe
+          ProductCatalog.ProductDelistedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductDelistedIntegrationEvent,
+          ProductCatalog.ProductListedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductListedIntegrationEvent,
+          ProductCatalog.ProductAddedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductAddedIntegrationEvent
 
 logging:
   level:
@@ -59,6 +74,9 @@ algashop:
   storage:
     s3:
       bucket-name: ${catalog.params.storage.s3.bucket-name}
+  messaging:
+    kafka:
+      product-event-topic-name: product-catalog.product.events
 
 eureka:
   client:

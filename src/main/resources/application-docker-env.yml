@@ -11,6 +11,12 @@ spring:
   data:
     redis:
       host: algashop-redis
+  # Dentro da rede do compose o bootstrap e o listener PLAINTEXT interno (9090).
+  # O development-env aponta para os EXTERNAL (9092-9094), que anunciam localhost -
+  # dentro do container, localhost e o proprio container, e a conexao morreria no
+  # segundo passo do bootstrap (conectar no endereco ANUNCIADO pelo broker).
+  kafka:
+    bootstrap-servers: algashop-kafka-1:9090,algashop-kafka-2:9090,algashop-kafka-3:9090
 
 # O DEBUG do driver de dentro do container so polui o log do compose
 logging:

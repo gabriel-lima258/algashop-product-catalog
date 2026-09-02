@@ -1,11 +1,13 @@
 package com.algaworks.algashop.product.catalog.infrastructure.util.mapper;
 
+import com.algaworks.algashop.product.catalog.application.product.event.ProductDelistedIntegrationEvent;
 import com.algaworks.algashop.product.catalog.application.product.query.ImageOutput;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductDetailOutput;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductSummaryOutput;
 import com.algaworks.algashop.product.catalog.application.util.Mapper;
 import com.algaworks.algashop.product.catalog.application.util.Slugfier;
 import com.algaworks.algashop.product.catalog.domain.product.Image;
+import com.algaworks.algashop.product.catalog.domain.product.ProductDelistedEvent;
 import com.algaworks.algashop.product.catalog.domain.product.Product;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.Converter;
@@ -70,6 +72,14 @@ public class ModelMapperConfig {
                     mappings.using(fromStringToSlugConverter)
                             .map(Product::getName, ProductDetailOutput::setSlug);
                 });
+
+        // o evento de DOMINIO carrega o typo deslistedAt; o contrato publico de integracao
+        // saiu correto (delistedAt). Com STRICT, nomes diferentes nao casam sozinhos - sem
+        // este de-para o campo iria NULO no JSON publicado, sem erro nenhum (mesma licao
+        // do paymentMethod no billing)
+        modelMapper.createTypeMap(ProductDelistedEvent.class, ProductDelistedIntegrationEvent.class)
+                .addMappings(mappings -> mappings.map(ProductDelistedEvent::getDeslistedAt,
+                        ProductDelistedIntegrationEvent::setDelistedAt));
     }
 
     private String convertFromFileNameToUrl(String fileName) {

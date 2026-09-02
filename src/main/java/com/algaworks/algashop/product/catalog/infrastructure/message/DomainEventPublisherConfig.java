@@ -5,7 +5,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// Adaptador da porta DomainEventPublisher - gemeo do ApplicationMessagePublisherConfig,
+// Adaptador da porta DomainEventPublisher - gemeo do LocalEventPublisherConfig,
 // ao lado. Os dois embrulham o MESMO ApplicationEventPublisher do Spring; o que os separa
 // e a camada que cada porta serve.
 //

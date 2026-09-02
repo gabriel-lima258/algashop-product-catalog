@@ -1,14 +1,23 @@
 package com.algaworks.algashop.product.catalog.infrastructure.listener.product;
 
+import com.algaworks.algashop.product.catalog.application.product.event.ProductAddedIntegrationEvent;
+import com.algaworks.algashop.product.catalog.application.product.event.ProductDelistedIntegrationEvent;
+import com.algaworks.algashop.product.catalog.application.product.event.ProductIntegrationEventPublisher;
+import com.algaworks.algashop.product.catalog.application.product.event.ProductListedIntegrationEvent;
+import com.algaworks.algashop.product.catalog.application.util.Mapper;
 import com.algaworks.algashop.product.catalog.domain.product.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-// Consumidor dos eventos de dominio do Product. Hoje so registra em log - e o proposito e
-// esse mesmo: tornar VISIVEL quando cada evento sai, que e a unica forma de perceber que
-// eles so aparecem depois de um productRepository.save().
+// Consumidor dos eventos de dominio do Product. Todos registram em log - para tornar
+// VISIVEL quando cada evento sai, que e a unica forma de perceber que eles so aparecem
+// depois de um productRepository.save(). Alguns vao alem: ProductAddedEvent,
+// ProductListedEvent e ProductDelistedEvent sao convertidos (mapper) em eventos de
+// integracao e publicados via ProductIntegrationEventPublisher, saindo no topico
+// Kafka product-catalog.product.events.
 //
 // Quase todos os handlers aqui sao SINCRONOS: rodam na mesma thread de quem salvou, logo
 // apos o save. Uma excecao sobe para o application service e o cliente ve o erro - o que e
@@ -34,41 +43,55 @@ import org.springframework.stereotype.Component;
 // legibilidade, deixando o filtro explicito na anotacao
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class ProductEventListener {
+
+    private final ProductIntegrationEventPublisher integrationEventPublisher;
+    private final Mapper mapper;
 
     @EventListener(ProductAddedEvent.class)
     public void handle(ProductAddedEvent event) {
         log.info("ProductAddedEvent: {}", event);
+        ProductAddedIntegrationEvent integrationEvent = mapper.convert(event, ProductAddedIntegrationEvent.class);
+        integrationEventPublisher.send(integrationEvent);
     }
 
     @EventListener(ProductPriceChangedEvent.class)
     @Async
     public void handle(ProductPriceChangedEvent event) {
         log.info("ProductPriceChangedEvent: {}", event);
+//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
     }
 
     @EventListener(ProductPlacedOnSaleEvent.class)
     public void handle(ProductPlacedOnSaleEvent event) {
         log.info("ProductPlacedOnSaleEvent: {}", event);
+//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
     }
 
     @EventListener(ProductListedEvent.class)
     public void handle(ProductListedEvent event) {
         log.info("ProductListedEvent: {}", event);
+        ProductListedIntegrationEvent integrationEvent = mapper.convert(event, ProductListedIntegrationEvent.class);
+        integrationEventPublisher.send(integrationEvent);
     }
 
     @EventListener(ProductDelistedEvent.class)
     public void handle(ProductDelistedEvent event) {
         log.info("ProductDelistedEvent: {}", event);
+        ProductDelistedIntegrationEvent integrationEvent = mapper.convert(event, ProductDelistedIntegrationEvent.class);
+        integrationEventPublisher.send(integrationEvent);
     }
 
     @EventListener(ProductRestockedEvent.class)
     public void handle(ProductRestockedEvent event) {
         log.info("ProductRestockedEvent: {}", event);
+//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
     }
 
     @EventListener(ProductSoldOutEvent.class)
     public void handle(ProductSoldOutEvent event) {
         log.info("ProductSoldOutEvent: {}", event);
+//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
     }
 }

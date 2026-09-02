@@ -74,6 +74,7 @@ dependencies {
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3' // s3 bucket
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-secrets-manager'
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store'
+    implementation 'org.springframework.boot:spring-boot-starter-kafka' // kafka broker
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
@@ -90,6 +91,7 @@ dependencies {
     testImplementation 'org.springframework.cloud:spring-cloud-starter-contract-verifier'
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
     testImplementation 'io.rest-assured:spring-mock-mvc:6.0.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-kafka-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     mockitoAgent 'org.mockito:mockito-core'
 }

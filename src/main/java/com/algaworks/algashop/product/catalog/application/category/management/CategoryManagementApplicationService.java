@@ -1,7 +1,6 @@
 package com.algaworks.algashop.product.catalog.application.category.management;
 
-import com.algaworks.algashop.product.catalog.application.ApplicationMessagePublisher;
-import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
+import com.algaworks.algashop.product.catalog.application.LocalEventPublisher;
 import com.algaworks.algashop.product.catalog.application.category.event.CategoryUpdatedEvent;
 import com.algaworks.algashop.product.catalog.application.util.CacheNames;
 import com.algaworks.algashop.product.catalog.domain.category.Category;
@@ -19,7 +18,7 @@ import java.util.UUID;
 public class CategoryManagementApplicationService {
 
     private final CategoryRepository categoryRepository;
-    private final ApplicationMessagePublisher applicationMessagePublisher;
+    private final LocalEventPublisher localEventPublisher;
 
 
     // Criar categoria nao mexe em nenhuma categoria existente, entao nao ha entrada
@@ -55,7 +54,7 @@ public class CategoryManagementApplicationService {
         // publica DEPOIS de gravar, nunca antes: o evento afirma um fato consumado, e
         // consumidor que reagisse a uma gravacao que ainda pode falhar propagaria mentira.
         // dai em diante o listener assume - ver infrastructure/listener/category
-        applicationMessagePublisher.send(new CategoryUpdatedEvent(
+        localEventPublisher.send(new CategoryUpdatedEvent(
                 category.getId(),
                 category.getName(),
                 category.getEnabled()
@@ -82,7 +81,7 @@ public class CategoryManagementApplicationService {
 
         // mesmo evento do update: desabilitar tambem e uma mudanca que a copia dentro dos
         // produtos precisa refletir (o campo category.enabled)
-        applicationMessagePublisher.send(new CategoryUpdatedEvent(
+        localEventPublisher.send(new CategoryUpdatedEvent(
                 category.getId(),
                 category.getName(),
                 category.getEnabled()
