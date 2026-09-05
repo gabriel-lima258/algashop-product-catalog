@@ -2,6 +2,7 @@ package com.algaworks.algashop.product.catalog.infrastructure.kafka;
 
 import com.algaworks.algashop.product.catalog.application.IntegrationEvent;
 import com.algaworks.algashop.product.catalog.application.product.event.ProductIntegrationEventPublisher;
+import com.algaworks.algashop.product.catalog.infrastructure.util.BeanValidationUtil;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +28,10 @@ import java.util.Map;
  * nome LÓGICO do tipo (spring.json.type.mapping) — é esse nome, e não o nome da
  * classe Java, que o consumidor usa para desserializar, desacoplando os pacotes do
  * produtor e do consumidor.
+ *
+ * Desde a Fase 39 o publisher valida o evento com Bean Validation (BeanValidationUtil)
+ * antes do send(): evento com campo obrigatório nulo é barrado aqui, no produtor —
+ * onde o erro tem contexto — em vez de atravessar o tópico e falhar no consumidor.
  */
 @Configuration
 public class KafkaConfig {
@@ -41,15 +46,15 @@ public class KafkaConfig {
     }
 
     // a implementacao da porta de saida so transporta: topico e key nao sao decisao
-    // do chamador - vem das properties e do proprio evento
+    // do chamador - vem das properties e do proprio evento. Antes do send, o evento
+    // passa pelo Bean Validation: contrato invalido morre no produtor, nao no topico
     @Bean
     public ProductIntegrationEventPublisher productIntegrationEventPublisher(KafkaTemplate<String, Object> kafkaTemplate,
-                                                                             AlgaShopMessagingKafkaProperties properties) {
-        return new ProductIntegrationEventPublisher() {
-            @Override
-            public void send(IntegrationEvent event) {
-                kafkaTemplate.send(properties.getProductEventTopicName(), event.getAggregateId(), event);
-            }
+                                                                             AlgaShopMessagingKafkaProperties properties,
+                                                                             BeanValidationUtil beanValidationUtil) {
+        return event -> {
+            beanValidationUtil.validate(event);
+            kafkaTemplate.send(properties.getProductEventTopicName(), event.getAggregateId(), event);
         };
     }
 }

@@ -4,6 +4,7 @@ import com.algaworks.algashop.product.catalog.application.product.event.ProductA
 import com.algaworks.algashop.product.catalog.application.product.event.ProductDelistedIntegrationEvent;
 import com.algaworks.algashop.product.catalog.application.product.event.ProductIntegrationEventPublisher;
 import com.algaworks.algashop.product.catalog.application.product.event.ProductListedIntegrationEvent;
+import com.algaworks.algashop.product.catalog.application.product.event.ProductPriceChangedV2IntegrationEvent;
 import com.algaworks.algashop.product.catalog.application.util.Mapper;
 import com.algaworks.algashop.product.catalog.domain.product.*;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +16,10 @@ import org.springframework.stereotype.Component;
 // Consumidor dos eventos de dominio do Product. Todos registram em log - para tornar
 // VISIVEL quando cada evento sai, que e a unica forma de perceber que eles so aparecem
 // depois de um productRepository.save(). Alguns vao alem: ProductAddedEvent,
-// ProductListedEvent e ProductDelistedEvent sao convertidos (mapper) em eventos de
-// integracao e publicados via ProductIntegrationEventPublisher, saindo no topico
-// Kafka product-catalog.product.events.
+// ProductListedEvent, ProductDelistedEvent e ProductPriceChangedEvent sao convertidos
+// (mapper) em eventos de integracao e publicados via ProductIntegrationEventPublisher,
+// saindo no topico Kafka product-catalog.product.events. O de preco sai como V2
+// (ProductPriceChangedV2IntegrationEvent) - versao no nome logico do contrato.
 //
 // Quase todos os handlers aqui sao SINCRONOS: rodam na mesma thread de quem salvou, logo
 // apos o save. Uma excecao sobe para o application service e o cliente ve o erro - o que e
@@ -34,10 +36,12 @@ import org.springframework.stereotype.Component;
 //               vira log e a escrita segue commitada; e se ele ler o banco, le o estado
 //               de antes do commit, porque a transacao ainda nao terminou
 //
-// Hoje o @Async aqui e inofensivo: changePrice sai pelo update(), que nao e @Transactional.
-// Mas anotar qualquer handler de estoque com @Async o tiraria do rollback silenciosamente -
-// nada quebraria, nada avisaria, e a garantia simplesmente deixaria de existir.
-// Ver transacoes-mongo.md.
+// O @Async aqui DEIXOU de ser inofensivo na Fase 39: o handler de preco agora publica
+// no Kafka, entao uma falha (validacao do evento, broker fora) acontece em outra thread
+// e vira apenas log - o preco muda no banco e o evento nao sai, sem nenhum erro para o
+// chamador. E o dual-write em sua forma mais silenciosa; a outbox das pendencias e a
+// resposta de verdade. E anotar qualquer handler de estoque com @Async o tiraria do
+// rollback silenciosamente - nada quebraria, nada avisaria. Ver transacoes-mongo.md.
 //
 // A assinatura ja diz o tipo, entao o @EventListener(X.class) e redundante - fica por
 // legibilidade, deixando o filtro explicito na anotacao
@@ -52,7 +56,7 @@ public class ProductEventListener {
     @EventListener(ProductAddedEvent.class)
     public void handle(ProductAddedEvent event) {
         log.info("ProductAddedEvent: {}", event);
-        ProductAddedIntegrationEvent integrationEvent = mapper.convert(event, ProductAddedIntegrationEvent.class);
+        var integrationEvent = mapper.convert(event, ProductAddedIntegrationEvent.class);
         integrationEventPublisher.send(integrationEvent);
     }
 
@@ -60,7 +64,8 @@ public class ProductEventListener {
     @Async
     public void handle(ProductPriceChangedEvent event) {
         log.info("ProductPriceChangedEvent: {}", event);
-//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
+        var integrationV2Event = mapper.convert(event, ProductPriceChangedV2IntegrationEvent.class);
+        integrationEventPublisher.send(integrationV2Event);
     }
 
     @EventListener(ProductPlacedOnSaleEvent.class)
@@ -72,14 +77,14 @@ public class ProductEventListener {
     @EventListener(ProductListedEvent.class)
     public void handle(ProductListedEvent event) {
         log.info("ProductListedEvent: {}", event);
-        ProductListedIntegrationEvent integrationEvent = mapper.convert(event, ProductListedIntegrationEvent.class);
+        var integrationEvent = mapper.convert(event, ProductListedIntegrationEvent.class);
         integrationEventPublisher.send(integrationEvent);
     }
 
     @EventListener(ProductDelistedEvent.class)
     public void handle(ProductDelistedEvent event) {
         log.info("ProductDelistedEvent: {}", event);
-        ProductDelistedIntegrationEvent integrationEvent = mapper.convert(event, ProductDelistedIntegrationEvent.class);
+        var integrationEvent = mapper.convert(event, ProductDelistedIntegrationEvent.class);
         integrationEventPublisher.send(integrationEvent);
     }
 
