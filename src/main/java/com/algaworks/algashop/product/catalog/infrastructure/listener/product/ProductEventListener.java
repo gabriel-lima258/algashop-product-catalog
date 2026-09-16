@@ -10,7 +10,6 @@ import com.algaworks.algashop.product.catalog.domain.product.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 // Consumidor dos eventos de dominio do Product. Todos registram em log - para tornar
@@ -21,27 +20,22 @@ import org.springframework.stereotype.Component;
 // saindo no topico Kafka product-catalog.product.events. O de preco sai como V2
 // (ProductPriceChangedV2IntegrationEvent) - versao no nome logico do contrato.
 //
-// Quase todos os handlers aqui sao SINCRONOS: rodam na mesma thread de quem salvou, logo
-// apos o save. Uma excecao sobe para o application service e o cliente ve o erro - o que e
-// desejavel para um handler que participa da operacao, e indesejavel para uma propagacao
-// em massa como a da categoria (por isso o CategoryEventListener e @Async).
+// Desde a Fase 41 TODOS os handlers sao SINCRONOS - o @Async que o handler de preco
+// teve nas Fases 38-40 foi removido de proposito, e a mudanca e o coracao da fase:
 //
-// A excecao e o ProductPriceChangedEvent, que ganhou @Async. Vale entender o que isso muda
-// perto de uma transacao, porque a diferenca e maior do que parece:
+//   sincrono -> roda NA MESMA THREAD e na mesma sessao transacional de quem salvou.
+//               O publisher usa send().get() bloqueante; se o Kafka nao confirmar
+//               (min.insync.replicas < 2, broker fora), a EventPublishingException
+//               sobe, o MongoTransactionManager aborta a sessao e o save NAO commita.
+//               Falha na publicacao = rollback no banco = 503 para o cliente.
+//   @Async   -> a falha aconteceria em outra thread e viraria so log: o preco mudava
+//               no banco e o evento nao saia - dual-write na forma mais silenciosa.
 //
-//   sincrono -> roda DENTRO da transacao de quem publicou. Se estourar, o rollback leva a
-//               escrita junto. E o caso de restock/withdraw: o evento nao e um "depois",
-//               e parte do mesmo commit
-//   @Async   -> roda em OUTRA thread, portanto fora da sessao transacional. Se estourar,
-//               vira log e a escrita segue commitada; e se ele ler o banco, le o estado
-//               de antes do commit, porque a transacao ainda nao terminou
-//
-// O @Async aqui DEIXOU de ser inofensivo na Fase 39: o handler de preco agora publica
-// no Kafka, entao uma falha (validacao do evento, broker fora) acontece em outra thread
-// e vira apenas log - o preco muda no banco e o evento nao sai, sem nenhum erro para o
-// chamador. E o dual-write em sua forma mais silenciosa; a outbox das pendencias e a
-// resposta de verdade. E anotar qualquer handler de estoque com @Async o tiraria do
-// rollback silenciosamente - nada quebraria, nada avisaria. Ver transacoes-mongo.md.
+// Isso NAO e outbox: e "transacao estendida" (o commit espera o ack do broker). O
+// preco e a latencia do request; o ganho e nunca commitar sem evento publicado. A
+// janela inversa existe - ack perdido no timeout = evento entregue com transacao
+// abortada - e foi aceita conscientemente (ver KafkaConfig). O ordering, com mais
+// eventos e mais consumidores, foi de outbox de verdade nesta mesma fase.
 //
 // A assinatura ja diz o tipo, entao o @EventListener(X.class) e redundante - fica por
 // legibilidade, deixando o filtro explicito na anotacao
@@ -61,7 +55,6 @@ public class ProductEventListener {
     }
 
     @EventListener(ProductPriceChangedEvent.class)
-    @Async
     public void handle(ProductPriceChangedEvent event) {
         log.info("ProductPriceChangedEvent: {}", event);
         var integrationV2Event = mapper.convert(event, ProductPriceChangedV2IntegrationEvent.class);

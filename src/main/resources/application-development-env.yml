@@ -1,6 +1,13 @@
 # config.import traz os secrets e parameters da aws (LocalStack) para este arquivo env.
 # O seed é feito pelo etc/aws/init.sh (parameters.csv / secrets.csv).
 
+# ACKS (recebimento de evento):
+#  0 — o producer não espera confirmação nenhuma. Escreveu no socket, considerou enviado.
+#  1 — espera só o líder gravar no log local dele.
+#  all — espera as réplicas em sincronia (min.insync.replicas) confirmarem antes do ack.
+#  A relação com idempotence é a INVERSA do que parece: é o enable.idempotence=true que
+#  exige acks=all (e ele é o default desde o Kafka 3.0) — acks=all sozinho não liga nada
+
 spring:
   config:
     import:
@@ -36,20 +43,29 @@ spring:
           issuer-uri: ${shared.params.auth-server-url} # url de authorization server
   kafka:
     bootstrap-servers: algashop-kafka-1:9092,algashop-kafka-2:9093,algashop-kafka-3:9094
+    properties:
+      spring.json.type.mapping: # customiza o type id do path completo com somente a referencia da classe
+        ProductCatalog.ProductDelistedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductDelistedIntegrationEvent,
+        ProductCatalog.ProductListedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductListedIntegrationEvent,
+        ProductCatalog.ProductAddedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductAddedIntegrationEvent,
+        ProductCatalog.ProductPriceChangedV2IntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPriceChangedV2IntegrationEvent
     #ponto inicial de conexão
     admin:
       fail-fast: true # Falha rápida caso não consiga se conectar ao cluster
       auto-create: true # Permite a criação automática de tópicos caso não existam
       modify-topic-configs: false # Impede a modificação de configurações de tópicos existentes
     producer:
+      acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer # chave String
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer # valor Json
+#      retries: 2147483647 # número maximo de tentativa
       properties:
-        spring.json.type.mapping: # customiza o type id do path completo com somente a referencia da classe
-          ProductCatalog.ProductDelistedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductDelistedIntegrationEvent,
-          ProductCatalog.ProductListedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductListedIntegrationEvent,
-          ProductCatalog.ProductAddedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductAddedIntegrationEvent,
-          ProductCatalog.ProductPriceChangedV2IntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPriceChangedV2IntegrationEvent
+        enable.idempotence: true
+#        retry.backoff.ms: 100 # espera inicial entre uma tentativa e outra
+#        retry.backoff.max.ms: 1000 # teto do backoff, que cresce a cada nova tentativa
+        request.timeout.ms: 5000 # tempo de UMA ida ao broker esperando a resposta
+        delivery.timeout.ms: 30000 # teto da operação inteira: envio + retries + backoff + confirmação
+        max.block.ms: 5000 # tempo que o próprio send() pode bloquear antes de existir future
 
 logging:
   level:

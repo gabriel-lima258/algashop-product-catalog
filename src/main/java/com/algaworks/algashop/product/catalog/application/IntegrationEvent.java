@@ -2,6 +2,8 @@ package com.algaworks.algashop.product.catalog.application;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.util.UUID;
+
 // Contrato minimo de todo evento de integracao do catalogo: expor o id do agregado
 // que o originou. Esse id vira a KEY do record no Kafka - e a key decide a particao,
 // e a particao decide a ordem: todos os eventos de um mesmo produto caem na mesma
@@ -17,4 +19,8 @@ public interface IntegrationEvent {
     // precisaria repensar isso, ou o id sumiria do corpo da mensagem
     @JsonIgnore
     String getAggregateId();
+
+    // gera uma chave para garantir a idempotencia de evento em seu envio
+    @JsonIgnore
+    UUID getIdempotencyKey();
 }

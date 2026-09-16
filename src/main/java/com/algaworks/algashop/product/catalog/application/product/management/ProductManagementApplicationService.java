@@ -43,6 +43,7 @@ public class ProductManagementApplicationService {
     //
     // O condition existe porque produto desabilitado nao deve ocupar cache: ele nao
     // aparece na listagem e quase nunca e consultado.
+    @Transactional
     @CachePut(cacheNames = CacheNames.PRODUCTS, key = "#result.id",
               condition = "#input.enabled == true")
     public ProductDetailOutput create(ProductInput input) {
@@ -55,6 +56,7 @@ public class ProductManagementApplicationService {
     // As duas anotacoes convivem porque as condicoes sao EXCLUDENTES: habilitado
     // reescreve a entrada, desabilitado a remove. Sem o par, desabilitar um produto por
     // update deixaria a versao antiga - ainda habilitada - servindo do cache ate o TTL.
+    @Transactional
     @CachePut(cacheNames = CacheNames.PRODUCTS, key = "#result.id",
               condition = "#input.enabled == true")
     @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId",
@@ -72,6 +74,7 @@ public class ProductManagementApplicationService {
     }
 
     // toda vez que um produto e desativado invalidamos seu cache
+    @Transactional
     @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void disable(UUID productId) {
         Product product = findProduct(productId);
@@ -83,6 +86,7 @@ public class ProductManagementApplicationService {
     // nao invalidava nada, entao quem tivesse lido a versao desabilitada continuava
     // recebendo enabled: false ate o TTL. Todo metodo que muda estado cacheado precisa
     // dizer o que fazer com o cache - inclusive para dizer "nada"
+    @Transactional
     @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void enable(UUID productId) {
         Product product = findProduct(productId);
@@ -98,10 +102,11 @@ public class ProductManagementApplicationService {
     // entre esta linha e o ajuste. O adaptador trata esse caso e devolve 404 tambem -
     // duas checagens porque sao dois instantes diferentes
     //
-    // O @Transactional esta aqui, e nao nos metodos acima, porque restock/withdraw sao os
-    // unicos que escrevem em DUAS colecoes: o ajuste atomico em products e o registro em
-    // stock_movements. Ou os dois entram, ou nenhum - sem isso o estoque poderia mudar e o
-    // movimento se perder, deixando um saldo certo que nenhum historico explica.
+    // restock/withdraw sempre precisaram de transacao por escreverem em DUAS colecoes
+    // (products + stock_movements). Desde a Fase 41 create/update/disable/enable TAMBEM
+    // sao @Transactional - nao por escrita dupla no banco, mas porque o save agora
+    // publica no Kafka DENTRO da mesma sessao: a transacao amarra documento + evento,
+    // e uma falha na publicacao desfaz a escrita (ver ProductEventListener/KafkaConfig).
     // Create/update/disable/enable fazem um save so, e no Mongo a escrita de UM documento
     // ja e atomica por natureza: transacao ali nao acrescentaria nada.
     //

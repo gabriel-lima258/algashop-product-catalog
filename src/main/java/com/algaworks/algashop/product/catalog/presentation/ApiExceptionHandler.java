@@ -1,5 +1,6 @@
 package com.algaworks.algashop.product.catalog.presentation;
 
+import com.algaworks.algashop.product.catalog.application.EventPublishingException;
 import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
 import com.algaworks.algashop.product.catalog.domain.DomainEntityNotFoundException;
 import com.algaworks.algashop.product.catalog.domain.DomainException;
@@ -85,6 +86,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         problemDetail.setTitle("Forbidden");
         problemDetail.setDetail("You do not have permission to access this resource");
         problemDetail.setType(URI.create("/errors/forbidden"));
+        return problemDetail;
+    }
+
+    @ExceptionHandler(EventPublishingException.class)
+    public ProblemDetail handleEventPublishingException(EventPublishingException e) {
+        log.error(e.getMessage(), e);
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problemDetail.setTitle("Service unavailable");
+        problemDetail.setDetail("Failed to publish event");
+        problemDetail.setType(URI.create("/errors/service-unavailable"));
         return problemDetail;
     }
 
