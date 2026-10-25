@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ public class CategoryManagementApplicationService {
     // Note que create NAO publica CategoryUpdatedEvent, e isso continua correto: categoria
     // recem-criada nao tem produto nenhum apontando para ela, entao nao existe copia
     // desnormalizada a sincronizar.
+    @Transactional
     @CacheEvict(cacheNames = CacheNames.CATEGORIES_FILTER, key = "'default'")
     public UUID create(CategoryInput input) {
         Category category = new Category(input.getName(), input.getEnabled());
@@ -38,6 +40,7 @@ public class CategoryManagementApplicationService {
     // Aqui sao DOIS caches, porque a mesma escrita torna duas coisas obsoletas: a
     // categoria em si e a listagem em que ela aparece. @Caching e so o involucro que
     // permite empilhar mais de um @CacheEvict no mesmo metodo.
+    @Transactional
     @Caching(
             evict = {
                     @CacheEvict(cacheNames = CacheNames.CATEGORIES_FILTER, key = "'default'"),
@@ -67,6 +70,7 @@ public class CategoryManagementApplicationService {
     // que o banco ja tinha contradito.
     //
     // Mesmos dois caches do update, pela mesma razao: muda a categoria e muda a listagem.
+    @Transactional
     @Caching(
             evict = {
                     @CacheEvict(cacheNames = CacheNames.CATEGORIES_FILTER, key = "'default'"),
