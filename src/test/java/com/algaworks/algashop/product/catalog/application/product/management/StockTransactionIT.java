@@ -1,6 +1,7 @@
 package com.algaworks.algashop.product.catalog.application.product.management;
 
 import com.algaworks.algashop.product.catalog.TestContainerMongoDBConfig;
+import com.algaworks.algashop.product.catalog.application.product.event.ProductIntegrationEventPublisher;
 import com.algaworks.algashop.product.catalog.domain.product.Product;
 import com.algaworks.algashop.product.catalog.domain.product.ProductRepository;
 import com.algaworks.algashop.product.catalog.domain.product.StockMovement;
@@ -56,6 +57,11 @@ class StockTransactionIT {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    // Mesmo raciocinio para o Kafka: o ProductEventListener publica eventos de integracao
+    // depois do commit, e nenhum *IT deve depender do broker de pe. A pergunta aqui e a
+    // atomicidade products + stock_movements, nao a entrega do evento.
+    @MockitoBean
+    private ProductIntegrationEventPublisher productIntegrationEventPublisher;
 
     private static final UUID EXISTING_PRODUCT = UUID.fromString("19274f99-e0d2-40b1-9b3a-912cb0982f11");
     private static final int INITIAL_STOCK = 50;

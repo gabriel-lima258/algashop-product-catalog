@@ -27,6 +27,13 @@ spring:
       credentials:
         access-key: test
         secret-key: test
+  # O KafkaConfig declara um NewTopic, e com ele o KafkaAdmin tenta conectar no broker
+  # na subida para provisionar o topico. Nenhum *IT deve depender do cluster Kafka de
+  # pe: sem criacao automatica o admin nao abre conexao, e o KafkaTemplate so conecta
+  # no primeiro send - que em teste nao acontece (o publisher e mockado onde precisa).
+  kafka:
+    admin:
+      auto-create: false
 
 logging:
   level:
@@ -46,6 +53,12 @@ algashop:
   # prefixo para montar a URL de leitura da imagem; nada e resolvido de fato.
   mapping:
     image-storage-url: http://localhost:4566/algashop-product-image
+  # AlgaShopMessagingKafkaProperties tambem e @Validated @NotBlank - sem o nome do
+  # topico o contexto completo (@SpringBootTest) nao sobe. As fatias nao carregam o
+  # KafkaConfig, por isso so o StockTransactionIT sentia a falta.
+  messaging:
+    kafka:
+      product-event-topic-name: product-catalog.product.events
   data-load:
     enabled: true
     auto-drop: true
