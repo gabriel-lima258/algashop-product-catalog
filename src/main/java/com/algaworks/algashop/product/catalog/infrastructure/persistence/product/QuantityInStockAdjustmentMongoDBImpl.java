@@ -1,9 +1,9 @@
 package com.algaworks.algashop.product.catalog.infrastructure.persistence.product;
 
-import com.algaworks.algashop.product.catalog.domain.product.InsufficientStockException;
 import com.algaworks.algashop.product.catalog.domain.product.Product;
 import com.algaworks.algashop.product.catalog.domain.product.ProductNotFoundException;
-import com.algaworks.algashop.product.catalog.domain.product.QuantityInStockAdjustment;
+import com.algaworks.algashop.product.catalog.domain.stock.InsufficientStockException;
+import com.algaworks.algashop.product.catalog.domain.stock.QuantityInStockAdjustment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -11,6 +11,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -28,6 +30,7 @@ import java.util.UUID;
 // Ver docs/02-persistencia/concorrencia-e-atomicidade.md
 @Component
 @RequiredArgsConstructor
+@Transactional(propagation = Propagation.MANDATORY) // executa na mesma transaction, evita criar multiplas instâncias
 public class QuantityInStockAdjustmentMongoDBImpl implements QuantityInStockAdjustment {
 
     private final MongoOperations mongoOperations;

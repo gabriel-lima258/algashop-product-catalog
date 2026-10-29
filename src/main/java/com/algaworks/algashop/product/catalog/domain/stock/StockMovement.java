@@ -1,7 +1,8 @@
-package com.algaworks.algashop.product.catalog.domain.product;
+package com.algaworks.algashop.product.catalog.domain.stock;
 
 import com.algaworks.algashop.product.catalog.domain.util.IdGenerator;
 import lombok.*;
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -32,8 +33,8 @@ import java.util.UUID;
 @Document(collection = "stock_movements")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class StockMovement {
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+public class StockMovement extends AbstractAggregateRoot<StockMovement> {
 
     // onlyExplicitlyIncluded exige que ALGUEM seja incluido - sem este @Include todo
     // movimento seria igual a todo outro, e um Set de movimentos guardaria exatamente um.
@@ -54,10 +55,12 @@ public class StockMovement {
     private Integer newQuantity;
     private MovementType type;
 
+    private String orderId;
+
     // @Builder no construtor, e nao na classe: id e occurredAt ficam de fora do builder de
     // proposito. Quem registra um movimento nao escolhe quando ele aconteceu
     @Builder
-    public StockMovement(UUID productId, Integer movementQuantity, Integer previousQuantity, Integer newQuantity, MovementType type) {
+    public StockMovement(UUID productId, Integer movementQuantity, Integer previousQuantity, String orderId, Integer newQuantity, MovementType type) {
         this.id = IdGenerator.generateTimeBasedUUID();
         this.occurredAt = OffsetDateTime.now();
         this.productId = productId;
@@ -65,6 +68,19 @@ public class StockMovement {
         this.previousQuantity = previousQuantity;
         this.newQuantity = newQuantity;
         this.type = type;
+
+        this.orderId = orderId;
+
+        super.registerEvent(StockMovementRegisteredEvent.builder()
+                .movementId(this.id)
+                .productId(this.productId)
+                .type(this.type)
+                .movementQuantity(this.movementQuantity)
+                .previousQuantity(this.previousQuantity)
+                .newQuantity(this.newQuantity)
+                .occurredAt(this.occurredAt)
+                .orderId(this.orderId)
+                .build());
     }
 
     public enum MovementType {

@@ -1,8 +1,9 @@
-package com.algaworks.algashop.product.catalog.domain.product;
+package com.algaworks.algashop.product.catalog.domain.stock;
 
-import com.algaworks.algashop.product.catalog.domain.DomainEventPublisher;
-import com.algaworks.algashop.product.catalog.domain.DomainException;
 import com.algaworks.algashop.product.catalog.domain.category.Category;
+import com.algaworks.algashop.product.catalog.domain.product.Product;
+import com.algaworks.algashop.product.catalog.domain.product.ProductNotFoundException;
+import com.algaworks.algashop.product.catalog.domain.product.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,116 +16,73 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-// Com a porta mockada da para exercitar a regra que decide se o evento sai, sem Mongo
-// nenhum. O que se testa aqui e a TRANSICAO: a mesma quantidade final produz evento ou
-// nao dependendo de onde o estoque estava antes.
+// Com a porta mockada da para exercitar o StockService sem Mongo nenhum. A regra que
+// decide se sai ProductSoldOut/ProductRestocked NAO mora mais aqui: ela foi para o
+// StockMovementRegisteredEvent (ver StockMovementRegisteredEventTest) e quem publica e o
+// StockMovementEventListener (ver StockMovementEventListenerTest)
 @ExtendWith(MockitoExtension.class)
 class StockServiceTest {
+
+    private static final String ORDER_ID = "order-1";
 
     @Mock
     private QuantityInStockAdjustment quantityInStockAdjustment;
 
     @Mock
-    private DomainEventPublisher domainEventPublisher;
+    private ProductRepository productRepository;
 
     @InjectMocks
     private StockService stockService;
-
-    @Test
-    void shouldPublishRestockedWhenStockLeavesZero() {
-        Product product = aProduct();
-        givenIncreaseResult(product.getId(), 0, 10);
-
-        stockService.restock(product, 10);
-
-        verify(domainEventPublisher).publish(any(ProductRestockedEvent.class));
-    }
-
-    @Test
-    void shouldNotPublishRestockedWhenStockWasAlreadyPositive() {
-        Product product = aProduct();
-        // 40 -> 50 tambem termina positivo, mas nao e reposicao: nao houve transicao
-        givenIncreaseResult(product.getId(), 40, 50);
-
-        stockService.restock(product, 10);
-
-        verify(domainEventPublisher, never()).publish(any());
-    }
-
-    @Test
-    void shouldPublishSoldOutWhenStockReachesZero() {
-        Product product = aProduct();
-        givenDecreaseResult(product.getId(), 10, 0);
-
-        stockService.withdraw(product, 10);
-
-        verify(domainEventPublisher).publish(any(ProductSoldOutEvent.class));
-    }
-
-    @Test
-    void shouldNotPublishSoldOutWhenStockRemains() {
-        Product product = aProduct();
-        givenDecreaseResult(product.getId(), 50, 40);
-
-        stockService.withdraw(product, 10);
-
-        verify(domainEventPublisher, never()).publish(any());
-    }
 
     // saldo insuficiente e produto ausente sao respostas legitimas da API e precisam
     // chegar intactas ao ApiExceptionHandler - 422 e 404, nao um erro generico
     @Test
     void shouldLetBusinessFailuresThrough() {
-        Product product = aProduct();
-        when(quantityInStockAdjustment.decrease(eq(product.getId()), anyInt()))
-                .thenThrow(new InsufficientStockException(product.getId(), 10, 3));
+        UUID productId = aProduct().getId();
+        when(quantityInStockAdjustment.decrease(eq(productId), anyInt()))
+                .thenThrow(new InsufficientStockException(productId, 10, 3));
 
         assertThatExceptionOfType(InsufficientStockException.class)
-                .isThrownBy(() -> stockService.withdraw(product, 10));
-
-        verify(domainEventPublisher, never()).publish(any());
+                .isThrownBy(() -> stockService.withdraw(productId, 10, ORDER_ID));
     }
 
     @Test
     void shouldLetNotFoundThrough() {
-        Product product = aProduct();
-        when(quantityInStockAdjustment.increase(eq(product.getId()), anyInt()))
-                .thenThrow(new ProductNotFoundException(product.getId()));
+        UUID productId = aProduct().getId();
+        when(quantityInStockAdjustment.increase(eq(productId), anyInt()))
+                .thenThrow(new ProductNotFoundException(productId));
 
         assertThatExceptionOfType(ProductNotFoundException.class)
-                .isThrownBy(() -> stockService.restock(product, 10));
+                .isThrownBy(() -> stockService.restock(productId, 10));
     }
 
-    // falha de infraestrutura vira DomainException, mas COM a causa encadeada -
-    // era isso que o catch(Exception) sem cause jogava fora
+    // falha de infraestrutura sobe como veio: o servico nao embrulha nada, e quem decide
+    // o que fazer com ela e a transacao em volta (rollback) e o handler da borda
     @Test
-    void shouldWrapInfrastructureFailuresKeepingTheCause() {
-        Product product = aProduct();
+    void shouldLetInfrastructureFailuresThrough() {
+        UUID productId = aProduct().getId();
         IllegalStateException mongoDown = new IllegalStateException("connection refused");
-        when(quantityInStockAdjustment.decrease(eq(product.getId()), anyInt())).thenThrow(mongoDown);
+        when(quantityInStockAdjustment.decrease(eq(productId), anyInt())).thenThrow(mongoDown);
 
-        assertThatExceptionOfType(DomainException.class)
-                .isThrownBy(() -> stockService.withdraw(product, 10))
-                .withCause(mongoDown);
+        assertThatExceptionOfType(IllegalStateException.class)
+                .isThrownBy(() -> stockService.withdraw(productId, 10, ORDER_ID))
+                .isSameAs(mongoDown);
     }
 
     // quantidade invalida nem chega ao banco
     @Test
     void shouldRejectNonPositiveQuantityBeforeTouchingTheAdjustment() {
-        Product product = aProduct();
+        UUID productId = aProduct().getId();
 
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> stockService.withdraw(product, 0));
+                .isThrownBy(() -> stockService.withdraw(productId, 0, ORDER_ID));
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> stockService.restock(product, -1));
+                .isThrownBy(() -> stockService.restock(productId, -1));
 
         verifyNoInteractions(quantityInStockAdjustment);
     }
@@ -133,12 +91,12 @@ class StockServiceTest {
     // vieram do Result, senao o saldo e o historico contam versoes diferentes do mesmo fato
     @Test
     void shouldDescribeTheRestockAsAnIncomingMovement() {
-        Product product = aProduct();
-        givenIncreaseResult(product.getId(), 40, 50);
+        UUID productId = aProduct().getId();
+        givenIncreaseResult(productId, 40, 50);
 
-        StockMovement movement = stockService.restock(product, 10);
+        StockMovement movement = stockService.restock(productId, 10);
 
-        assertThat(movement.getProductId()).isEqualTo(product.getId());
+        assertThat(movement.getProductId()).isEqualTo(productId);
         assertThat(movement.getType()).isEqualTo(StockMovement.MovementType.STOCK_IN);
         assertThat(movement.getMovementQuantity()).isEqualTo(10);
         assertThat(movement.getPreviousQuantity()).isEqualTo(40);
@@ -150,16 +108,17 @@ class StockServiceTest {
     // Se isso inverter, toda soma de "quanto saiu" passa a mentir em silencio
     @Test
     void shouldDescribeTheWithdrawAsAnOutgoingMovementWithPositiveQuantity() {
-        Product product = aProduct();
-        givenDecreaseResult(product.getId(), 50, 40);
+        UUID productId = aProduct().getId();
+        givenDecreaseResult(productId, 50, 40);
 
-        StockMovement movement = stockService.withdraw(product, 10);
+        StockMovement movement = stockService.withdraw(productId, 10, ORDER_ID);
 
-        assertThat(movement.getProductId()).isEqualTo(product.getId());
+        assertThat(movement.getProductId()).isEqualTo(productId);
         assertThat(movement.getType()).isEqualTo(StockMovement.MovementType.STOCK_OUT);
         assertThat(movement.getMovementQuantity()).isPositive().isEqualTo(10);
         assertThat(movement.getPreviousQuantity()).isEqualTo(50);
         assertThat(movement.getNewQuantity()).isEqualTo(40);
+        assertThat(movement.getOrderId()).isEqualTo(ORDER_ID);
     }
 
     // dois movimentos com os mesmos numeros continuam sendo dois fatos distintos.
@@ -167,12 +126,11 @@ class StockServiceTest {
     // Set guardaria so um deles
     @Test
     void shouldTreatTwoIdenticalMovementsAsDistinctFacts() {
-        Product product = aProduct();
-        when(quantityInStockAdjustment.decrease(eq(product.getId()), anyInt()))
-                .thenReturn(new QuantityInStockAdjustment.Result(product.getId(), 50, 40));
+        UUID productId = aProduct().getId();
+        givenDecreaseResult(productId, 50, 40);
 
-        StockMovement first = stockService.withdraw(product, 10);
-        StockMovement second = stockService.withdraw(product, 10);
+        StockMovement first = stockService.withdraw(productId, 10, ORDER_ID);
+        StockMovement second = stockService.withdraw(productId, 10, ORDER_ID);
 
         assertThat(first.getId()).isNotEqualTo(second.getId());
         assertThat(first).isNotEqualTo(second);

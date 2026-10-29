@@ -241,6 +241,13 @@ public class Product extends AbstractAggregateRoot<Product> {
         return this.getQuantityInStock() != null && this.getQuantityInStock() > 0;
     }
 
+    public boolean hasQuantity(int quantity) {
+        if (quantity < 1) {
+            throw new IllegalArgumentException();
+        }
+        return this.getQuantityInStock() != null && this.getQuantityInStock() >= quantity;
+    }
+
     public boolean getHasDiscount() {
         return getDiscountPercentageRounded() != null && getDiscountPercentageRounded() > 0;
     }

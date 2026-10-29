@@ -1,4 +1,4 @@
-package com.algaworks.algashop.product.catalog.domain.product;
+package com.algaworks.algashop.product.catalog.domain.stock;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 

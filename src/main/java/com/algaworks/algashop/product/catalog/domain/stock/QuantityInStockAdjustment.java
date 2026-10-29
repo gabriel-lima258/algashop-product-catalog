@@ -1,4 +1,4 @@
-package com.algaworks.algashop.product.catalog.domain.product;
+package com.algaworks.algashop.product.catalog.domain.stock;
 
 import java.util.UUID;
 
@@ -19,18 +19,5 @@ public interface QuantityInStockAdjustment {
             UUID productId,
             int previousQuantity,
             int newQuantity
-    ) {
-        // "acabou o estoque" e diferente de "esta zerado": o segundo e verdade a cada
-        // consulta enquanto ninguem repoe, e viraria uma enxurrada de eventos iguais.
-        // A condicao previousQuantity != 0 e o que transforma estado em acontecimento
-        public boolean isOutOfStock() {
-            return newQuantity == 0 && previousQuantity != 0;
-        }
-
-        // mesma logica ao contrario: so e reposicao se ANTES estava zerado.
-        // repor 10 sobre 40 nao e novidade para ninguem
-        public boolean isRestocked() {
-            return newQuantity > 0 && previousQuantity == 0;
-        }
-    }
+    ){}
 }

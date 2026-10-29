@@ -1,6 +1,5 @@
 package com.algaworks.algashop.product.catalog.application.product.management;
 
-import com.algaworks.algashop.product.catalog.application.ResourceNotFoundException;
 import com.algaworks.algashop.product.catalog.application.product.query.ProductDetailOutput;
 import com.algaworks.algashop.product.catalog.application.util.CacheNames;
 import com.algaworks.algashop.product.catalog.application.util.Mapper;
@@ -8,6 +7,9 @@ import com.algaworks.algashop.product.catalog.domain.category.Category;
 import com.algaworks.algashop.product.catalog.domain.category.CategoryNotFoundException;
 import com.algaworks.algashop.product.catalog.domain.category.CategoryRepository;
 import com.algaworks.algashop.product.catalog.domain.product.*;
+import com.algaworks.algashop.product.catalog.domain.stock.StockMovement;
+import com.algaworks.algashop.product.catalog.domain.stock.StockMovementRepository;
+import com.algaworks.algashop.product.catalog.domain.stock.StockService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -149,7 +151,7 @@ public class ProductManagementApplicationService {
     @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void restock(UUID productId, int quantity) {
         Product product = findProduct(productId);
-        StockMovement movement = stockService.restock(product, quantity);
+        StockMovement movement = stockService.restock(product.getId(), quantity);
         stockMovementRepository.save(movement);
     }
 
@@ -157,7 +159,7 @@ public class ProductManagementApplicationService {
     @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")
     public void withdraw(UUID productId, int quantity) {
         Product product = findProduct(productId);
-        StockMovement movement = stockService.withdraw(product, quantity);
+        StockMovement movement = stockService.withdraw(product.getId(), quantity, null);
         stockMovementRepository.save(movement);
     }
 
