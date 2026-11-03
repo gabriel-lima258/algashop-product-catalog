@@ -100,7 +100,7 @@ public class StockService {
         });
 
         // 3. baixa cada produto pelo withdraw() unitario e devolve um StockMovement por
-        // produto. O decrease() e MANDATORY: quem chama precisa abrir a transacao, e uma
+        // produto. Quem chama abre a transacao (o reserveForOrder e @Transactional), e uma
         // falha no meio (saldo levado entre a checagem e a baixa) desfaz tambem as baixas
         // anteriores - o pedido baixa tudo ou nada
         return quantityByProduct.entrySet().stream()

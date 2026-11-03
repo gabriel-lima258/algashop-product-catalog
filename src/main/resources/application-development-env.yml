@@ -51,10 +51,7 @@ spring:
         ProductCatalog.ProductPriceChangedV2IntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPriceChangedV2IntegrationEvent,
         ProductCatalog.ProductPlacedOnSaleIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPlacedOnSaleIntegrationEvent,
         ProductCatalog.ProductRestockedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductRestockedIntegrationEvent,
-        ProductCatalog.ProductSoldOutIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductSoldOutIntegrationEvent,
-        ProductCatalog.StockReservationConfirmedIntegrationEvent:com.algaworks.algashop.product.catalog.application.stock.event.StockReservationConfirmedIntegrationEvent,
-        ProductCatalog.StockReservationRejectedIntegrationEvent:com.algaworks.algashop.product.catalog.application.stock.event.StockReservationRejectedIntegrationEvent,
-        Ordering.OrderPaidIntegrationEvent:com.algaworks.algashop.product.catalog.application.order.event.OrderPaidIntegrationEvent
+        ProductCatalog.ProductSoldOutIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductSoldOutIntegrationEvent
     #ponto inicial de conexão
     admin:
       fail-fast: true # Falha rápida caso não consiga se conectar ao cluster
@@ -112,9 +109,6 @@ algashop:
   messaging:
     kafka:
       product-event-topic-name: product-catalog.product.events
-      order-event-topic-name: ordering.order.events
-      stock-event-topic-name: product-catalog.stock.events
-      order-events-consumer-group: product-catalog.order-events
 eureka:
   client:
     serviceUrl:

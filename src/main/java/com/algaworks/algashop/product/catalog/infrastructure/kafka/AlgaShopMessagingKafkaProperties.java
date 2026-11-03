@@ -19,15 +19,4 @@ public class AlgaShopMessagingKafkaProperties {
 
     @NotBlank
     private String productEventTopicName;
-
-    @NotBlank
-    private String stockEventTopicName;
-
-    // tópico de eventos de pedido, que o serviço vai consumir.
-    @NotBlank
-    private String orderEventTopicName;
-
-    // grupo consumidor de eventos de pedido.
-    @NotBlank
-    private String orderEventsConsumerGroup;
 }

@@ -11,8 +11,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -28,9 +26,12 @@ import java.util.UUID;
 // a operacao inteira de outra requisicao. Dois clientes leem estoque 1, os dois aprovam o
 // saque, os dois gravam 0 - e sairam duas unidades de um estoque que tinha uma.
 // Ver docs/02-persistencia/concorrencia-e-atomicidade.md
+//
+// Sem @Transactional proprio: cada findAndModify ja e atomico por documento. Quando o
+// chamador abre uma transacao (restock, withdraw, reserveForOrder), o MongoOperations
+// participa dela e o ajuste commita junto com o movimento
 @Component
 @RequiredArgsConstructor
-@Transactional(propagation = Propagation.MANDATORY) // executa na mesma transaction, evita criar multiplas instâncias
 public class QuantityInStockAdjustmentMongoDBImpl implements QuantityInStockAdjustment {
 
     private final MongoOperations mongoOperations;
