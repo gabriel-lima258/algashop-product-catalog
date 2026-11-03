@@ -3,18 +3,28 @@ package com.algaworks.algashop.product.catalog.infrastructure.kafka;
 import com.algaworks.algashop.product.catalog.application.EventPublishingException;
 import com.algaworks.algashop.product.catalog.application.IntegrationEvent;
 import com.algaworks.algashop.product.catalog.application.product.event.ProductIntegrationEventPublisher;
+import com.algaworks.algashop.product.catalog.application.stock.event.StockIntegrationEventPublisher;
+import com.algaworks.algashop.product.catalog.domain.DomainException;
 import com.algaworks.algashop.product.catalog.infrastructure.util.BeanValidationUtil;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.util.backoff.ExponentialBackOff;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -62,58 +72,148 @@ import java.util.concurrent.TimeoutException;
 @Configuration
 public class KafkaConfig {
 
+    private static final String DLT_PREFIX = "product-catalog.dlt.";
+
+    public static final String TYPE_ID_HEADER = "__TypeId__";
     public static final String IDEMPOTENCY_KEY_HEADER = "idempotency-key";
+
+    private static final int TOPIC_PARTITIONS = 3;
+    private static final int TOPIC_REPLICAS = 3;
+    private static final long RETENTION_30_DAYS = Duration.ofDays(30).toMillis();
 
     @Bean
     public NewTopic productsEventTopic(AlgaShopMessagingKafkaProperties properties) {
         return TopicBuilder.name(properties.getProductEventTopicName())
-                .partitions(3)
-                .replicas(3)
+                .partitions(TOPIC_PARTITIONS)
+                .replicas(TOPIC_REPLICAS)
                 .configs(Map.of("min.insync.replicas", "2"))
                 .build();
+    }
+
+    @Bean
+    public NewTopic stockEventTopic(AlgaShopMessagingKafkaProperties properties) {
+        return TopicBuilder.name(properties.getStockEventTopicName())
+                .partitions(TOPIC_PARTITIONS)
+                .replicas(TOPIC_REPLICAS)
+                .configs(Map.of("min.insync.replicas", "2"))
+                .build();
+    }
+
+    @Bean
+    public NewTopic orderEventsDlt(AlgaShopMessagingKafkaProperties properties) {
+        return createDeadLetterTopic(properties.getOrderEventTopicName());
+    }
+
+    // método para criar topics de dead letter no lado consumer, configuração padrão
+    private NewTopic createDeadLetterTopic(String originalTopicName) {
+        return TopicBuilder.name(DLT_PREFIX + originalTopicName)
+                .partitions(TOPIC_PARTITIONS) // o mesmo do topico original
+                .replicas(TOPIC_REPLICAS)
+                .configs(Map.of(
+                        "min.insync.replicas", "2",
+                        "retention.ms", String.valueOf(RETENTION_30_DAYS)
+                ))
+                .build();
+    }
+
+    /**
+     * Recoverer de Dead Letter Topic (DLT): é chamado pelo DefaultErrorHandler quando
+     * um record esgota todas as retentativas (ou lança uma exceção não-retryable).
+     */
+    @Bean
+    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(
+            KafkaTemplate<String, Object> kafkaTemplate) {
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
+                (consumerRecord, exception) ->
+                        new TopicPartition(DLT_PREFIX + consumerRecord.topic(),
+                                consumerRecord.partition())
+        );
+        recoverer.setLogRecoveryRecord(true);
+        recoverer.setFailIfSendResultIsError(false);
+        return recoverer;
+    }
+
+
+    // ignora eventos em retry em business exception e costumiza os valores de retries
+    @Bean
+    public DefaultErrorHandler defaultErrorHandler(DeadLetterPublishingRecoverer recoverer) {
+        long interval = 2000L; // 2 segundos
+        double multiplier = 2; // multiplicador exponencial
+        long maxRetries = 3L; // 3 RETENTATIVAS: com a entrega original sao 4 execucoes (2s/4s/8s)
+
+        ExponentialBackOff exponentialBackOff = new ExponentialBackOff(interval, multiplier);
+        exponentialBackOff.setMaxAttempts(maxRetries);
+        exponentialBackOff.setMaxInterval(8_000L);
+
+        DefaultErrorHandler defaultErrorHandler = new DefaultErrorHandler(recoverer, exponentialBackOff);
+
+        // não realiza retentativas dessas exceptions e envia para o dead letter topic
+        defaultErrorHandler.addNotRetryableExceptions(
+                DomainException.class,
+                ConstraintViolationException.class,
+                DataIntegrityViolationException.class,
+                DuplicateKeyException.class,
+                IllegalArgumentException.class
+        );
+
+        return defaultErrorHandler;
     }
 
     // a implementacao da porta de saida so transporta: topico e key nao sao decisao
     // do chamador - vem das properties e do proprio evento. Antes do send, o evento
     // passa pelo Bean Validation: contrato invalido morre no produtor, nao no topico
     @Bean
-    public ProductIntegrationEventPublisher productIntegrationEventPublisher(KafkaTemplate<String, Object> kafkaTemplate,
-                                                                             AlgaShopMessagingKafkaProperties properties,
-                                                                             BeanValidationUtil beanValidationUtil) {
-        return event -> {
-            beanValidationUtil.validate(event);
-            SendResult<String, Object> result = null;
-            try {
-                ProducerRecord<String, Object> record = new ProducerRecord<>(
-                        properties.getProductEventTopicName(),
-                        event.getAggregateId(),
-                        event);
+    public ProductIntegrationEventPublisher productIntegrationEventPublisher(
+            KafkaTemplate<String, Object> kafkaTemplate,
+            AlgaShopMessagingKafkaProperties properties,
+            BeanValidationUtil beanValidationUtil) {
+        return event -> publish(event, properties.getProductEventTopicName(),
+                kafkaTemplate, beanValidationUtil);
+    }
 
-                if (event.getIdempotencyKey() != null) {
-                    // publica a chave de idempotencia no header
-                    record.headers().add(KafkaConfig.IDEMPOTENCY_KEY_HEADER, event.getIdempotencyKey().toString().getBytes());
-                }
+    @Bean
+    public StockIntegrationEventPublisher stockIntegrationEventPublisher(
+            KafkaTemplate<String, Object> kafkaTemplate,
+            AlgaShopMessagingKafkaProperties properties,
+            BeanValidationUtil beanValidationUtil) {
+        return event -> publish(event, properties.getStockEventTopicName(),
+                kafkaTemplate, beanValidationUtil);
+    }
 
-                result = kafkaTemplate.send(record).get(40, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new EventPublishingException("Interrupted while publishing", event, e);
-            } catch (TimeoutException | ExecutionException | KafkaException |
-                     org.apache.kafka.common.KafkaException e) {
-                // as DUAS KafkaException: a do Spring (falhas do template) e a do Apache -
-                // sem a segunda, uma SerializationException (lancada sincrona no send)
-                // escaparia do catch e viraria 500 generico em vez de 503 com rollback
-                throw new EventPublishingException("Failed to publish", event, e);
+    private void publish(
+            IntegrationEvent event,
+            String destination,
+            KafkaTemplate<String, Object> kafkaTemplate,
+            BeanValidationUtil beanValidationUtil) {
+        beanValidationUtil.validate(event);
+        SendResult<String, Object> result;
+        try {
+            ProducerRecord<String, Object> record = new ProducerRecord<>(
+                    destination,
+                    event.getAggregateId(),
+                    event);
+
+            if (event.getIdempotencyKey() != null) {
+                record.headers().add(KafkaConfig.IDEMPOTENCY_KEY_HEADER, event.getIdempotencyKey().toString().getBytes());
             }
 
-            RecordMetadata metadata = result.getRecordMetadata();
+            result = kafkaTemplate.send(record).get(40, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new EventPublishingException("Interrupted while publishing", event, e);
+        } catch (TimeoutException | ExecutionException | KafkaException e) {
+            throw new EventPublishingException("Failed to publish", event, e);
+        }
 
-            log.info("Published {} to {}-{} at offset {}",
-                    event.getClass().getSimpleName(),
-                    metadata.topic(),
-                    metadata.partition(),
-                    metadata.offset()
-            );
-        };
+        RecordMetadata metadata = result.getRecordMetadata();
+
+        log.info("Published {} to {}-{} at offset {}",
+                event.getClass().getSimpleName(),
+                metadata.topic(),
+                metadata.partition(),
+                metadata.offset()
+        );
     }
+
+
 }

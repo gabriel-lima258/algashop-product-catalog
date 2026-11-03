@@ -1,10 +1,6 @@
 package com.algaworks.algashop.product.catalog.infrastructure.listener.product;
 
-import com.algaworks.algashop.product.catalog.application.product.event.ProductAddedIntegrationEvent;
-import com.algaworks.algashop.product.catalog.application.product.event.ProductDelistedIntegrationEvent;
-import com.algaworks.algashop.product.catalog.application.product.event.ProductIntegrationEventPublisher;
-import com.algaworks.algashop.product.catalog.application.product.event.ProductListedIntegrationEvent;
-import com.algaworks.algashop.product.catalog.application.product.event.ProductPriceChangedV2IntegrationEvent;
+import com.algaworks.algashop.product.catalog.application.product.event.*;
 import com.algaworks.algashop.product.catalog.application.util.Mapper;
 import com.algaworks.algashop.product.catalog.domain.product.*;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +65,8 @@ public class ProductEventListener {
     @Async
     public void handle(ProductPlacedOnSaleEvent event) {
         log.info("ProductPlacedOnSaleEvent: {}", event);
-//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
+        var integrationEvent = mapper.convert(event, ProductPlacedOnSaleIntegrationEvent.class);
+        integrationEventPublisher.send(integrationEvent);
     }
 
     @TransactionalEventListener
@@ -92,12 +89,15 @@ public class ProductEventListener {
     @Async
     public void handle(ProductRestockedEvent event) {
         log.info("ProductRestockedEvent: {}", event);
-//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
+        var integrationEvent = mapper.convert(event, ProductRestockedIntegrationEvent.class);
+        integrationEventPublisher.send(integrationEvent);
     }
 
     @TransactionalEventListener
+    @Async
     public void handle(ProductSoldOutEvent event) {
         log.info("ProductSoldOutEvent: {}", event);
-//        integrationEventPublisher.send(event, event.getProductId().toString(), "product-catalog.product.events");
+        var integrationEvent = mapper.convert(event, ProductSoldOutIntegrationEvent.class);
+        integrationEventPublisher.send(integrationEvent);
     }
 }

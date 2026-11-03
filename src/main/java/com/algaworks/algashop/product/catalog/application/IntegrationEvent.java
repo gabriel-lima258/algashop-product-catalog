@@ -20,7 +20,9 @@ public interface IntegrationEvent {
     @JsonIgnore
     String getAggregateId();
 
-    // gera uma chave para garantir a idempotencia de evento em seu envio
+    // gera uma chave para garantir a idempotencia de evento em seu envio, mas o restock não precisa por isso null como default
     @JsonIgnore
-    UUID getIdempotencyKey();
+    default UUID getIdempotencyKey() {
+        return null;
+    };
 }
