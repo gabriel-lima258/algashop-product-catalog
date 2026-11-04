@@ -1,6 +1,6 @@
 package com.algaworks.algashop.product.catalog.application.product.event;
 
-import com.algaworks.algashop.product.catalog.application.IntegrationEvent;
+import com.algaworks.algashop.product.catalog.application.OutboundIntegrationEvent;
 import com.algaworks.algashop.product.catalog.domain.util.IdGenerator;
 import lombok.*;
 
@@ -16,7 +16,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductListedIntegrationEvent implements IntegrationEvent {
+public class ProductListedIntegrationEvent implements OutboundIntegrationEvent {
     // @Builder.Default: sem ele o Lombok IGNORA o inicializador no builder e um
     // .builder().build() sairia com idempotencyKey nulo - evento sem header de dedupe,
     // em silencio (o publisher so grava o header quando a chave nao e nula)

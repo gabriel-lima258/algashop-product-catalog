@@ -1,7 +1,7 @@
 package com.algaworks.algashop.product.catalog.infrastructure.kafka;
 
 import com.algaworks.algashop.product.catalog.application.EventPublishingException;
-import com.algaworks.algashop.product.catalog.application.IntegrationEvent;
+import com.algaworks.algashop.product.catalog.application.OutboundIntegrationEvent;
 import com.algaworks.algashop.product.catalog.application.product.event.ProductIntegrationEventPublisher;
 import com.algaworks.algashop.product.catalog.domain.DomainException;
 import com.algaworks.algashop.product.catalog.infrastructure.util.BeanValidationUtil;
@@ -157,7 +157,7 @@ public class KafkaConfig {
     }
 
     private void publish(
-            IntegrationEvent event,
+            OutboundIntegrationEvent event,
             String destination,
             KafkaTemplate<String, Object> kafkaTemplate,
             BeanValidationUtil beanValidationUtil) {

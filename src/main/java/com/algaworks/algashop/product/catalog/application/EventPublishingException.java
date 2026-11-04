@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public class EventPublishingException extends RuntimeException {
 
-    private IntegrationEvent event;
+    private OutboundIntegrationEvent event;
 
     public EventPublishingException() {
     }
@@ -28,7 +28,7 @@ public class EventPublishingException extends RuntimeException {
 
     // a CAUSA vai junto: sem o super(..., e) o stack trace do broker (TimeoutException,
     // NotEnoughReplicas) sumiria do log - exatamente o dado que se quer ao simular falhas
-    public EventPublishingException(String message, IntegrationEvent event, Throwable e) {
+    public EventPublishingException(String message, OutboundIntegrationEvent event, Throwable e) {
         super("%s Event=%s AggregateId=%s".formatted(message, event.getClass().getSimpleName(), event.getAggregateId()), e);
         this.event = event;
     }
