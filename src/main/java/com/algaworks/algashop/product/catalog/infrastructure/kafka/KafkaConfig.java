@@ -89,6 +89,16 @@ public class KafkaConfig {
                 .build();
     }
 
+
+    @Bean
+    public NewTopic stockCommandsTopic(AlgaShopMessagingKafkaProperties properties) {
+        return TopicBuilder.name(properties.getStockCommandsTopicName())
+                .partitions(TOPIC_PARTITIONS)
+                .replicas(TOPIC_REPLICAS)
+                .configs(Map.of("min.insync.replicas", "2"))
+                .build();
+    }
+
     // método para criar topics de dead letter no lado consumer, configuração padrão
     private NewTopic createDeadLetterTopic(String originalTopicName) {
         return TopicBuilder.name(DLT_PREFIX + originalTopicName)

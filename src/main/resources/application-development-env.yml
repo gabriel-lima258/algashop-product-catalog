@@ -109,6 +109,7 @@ algashop:
   messaging:
     kafka:
       product-event-topic-name: product-catalog.product.events
+      stock-commands-topic-name: product-catalog.stock.commands
 eureka:
   client:
     serviceUrl:
