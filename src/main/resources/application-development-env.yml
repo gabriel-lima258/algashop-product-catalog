@@ -51,7 +51,10 @@ spring:
         ProductCatalog.ProductPriceChangedV2IntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPriceChangedV2IntegrationEvent,
         ProductCatalog.ProductPlacedOnSaleIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPlacedOnSaleIntegrationEvent,
         ProductCatalog.ProductRestockedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductRestockedIntegrationEvent,
-        ProductCatalog.ProductSoldOutIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductSoldOutIntegrationEvent
+        ProductCatalog.ProductSoldOutIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductSoldOutIntegrationEvent,
+        Stock.ReserveStockIntegrationCommand:com.algaworks.algashop.product.catalog.application.stock.command.ReserveStockIntegrationCommand,
+        Stock.StockReservationConfirmedIntegrationReply:com.algaworks.algashop.product.catalog.application.stock.reply.StockReservationConfirmedIntegrationReply,
+        Stock.StockReservationRejectedIntegrationReply:com.algaworks.algashop.product.catalog.application.stock.reply.StockReservationRejectedIntegrationReply
     #ponto inicial de conexão
     admin:
       fail-fast: true # Falha rápida caso não consiga se conectar ao cluster
@@ -110,6 +113,7 @@ algashop:
     kafka:
       product-event-topic-name: product-catalog.product.events
       stock-commands-topic-name: product-catalog.stock.commands
+      stock-commands-consumer-group: product-catalog.stock-commands
 eureka:
   client:
     serviceUrl:

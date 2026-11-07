@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ public class StockManagementApplicationService {
     private final StockMovementRepository stockMovementRepository;
 
     @Transactional
-    public void reserveForOrder(StockReservationInput input) {
+    public UUID reserveForOrder(StockReservationInput input) {
         Objects.requireNonNull(input);
 
         String orderId = input.getOrderId();
@@ -46,6 +47,8 @@ public class StockManagementApplicationService {
             stockMovementRepository.saveAll(movements);
         }
         stockReservationRepository.save(reservation);
+
+        return reservation.getId();
     }
 
     private List<StockReservationItem> toItems(StockReservationInput input) {

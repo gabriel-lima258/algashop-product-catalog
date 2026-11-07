@@ -31,7 +31,10 @@ spring:
         ProductCatalog.ProductPriceChangedV2IntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPriceChangedV2IntegrationEvent,
         ProductCatalog.ProductPlacedOnSaleIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductPlacedOnSaleIntegrationEvent,
         ProductCatalog.ProductRestockedIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductRestockedIntegrationEvent,
-        ProductCatalog.ProductSoldOutIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductSoldOutIntegrationEvent
+        ProductCatalog.ProductSoldOutIntegrationEvent:com.algaworks.algashop.product.catalog.application.product.event.ProductSoldOutIntegrationEvent,
+        Stock.ReserveStockIntegrationCommand:com.algaworks.algashop.product.catalog.application.stock.command.ReserveStockIntegrationCommand,
+        Stock.StockReservationConfirmedIntegrationReply:com.algaworks.algashop.product.catalog.application.stock.reply.StockReservationConfirmedIntegrationReply,
+        Stock.StockReservationRejectedIntegrationReply:com.algaworks.algashop.product.catalog.application.stock.reply.StockReservationRejectedIntegrationReply
     producer:
       acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

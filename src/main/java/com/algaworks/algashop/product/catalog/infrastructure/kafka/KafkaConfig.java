@@ -99,6 +99,13 @@ public class KafkaConfig {
                 .build();
     }
 
+    // DLT dos comandos de estoque: o recoverer publica na MESMA particao do record original,
+    // entao o DLT precisa existir com as mesmas 3 particoes - auto-criacao do broker nao garante
+    @Bean
+    public NewTopic stockCommandsDlt(AlgaShopMessagingKafkaProperties properties) {
+        return createDeadLetterTopic(properties.getStockCommandsTopicName());
+    }
+
     // método para criar topics de dead letter no lado consumer, configuração padrão
     private NewTopic createDeadLetterTopic(String originalTopicName) {
         return TopicBuilder.name(DLT_PREFIX + originalTopicName)

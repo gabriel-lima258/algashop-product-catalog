@@ -60,6 +60,7 @@ algashop:
     kafka:
       product-event-topic-name: product-catalog.product.events
       stock-commands-topic-name: product-catalog.stock.commands
+      stock-commands-consumer-group: product-catalog.stock-commands
   data-load:
     enabled: true
     auto-drop: true
