@@ -12,7 +12,7 @@ package com.algaworks.algashop.product.catalog.domain;
 // application. A duplicacao e proposital e a diferenca e de CAMADA, nao de comportamento:
 // o dominio nao pode depender de uma interface declarada na application. Ambas sao
 // implementadas pelo mesmo ApplicationEventPublisher do Spring, em @Configuration
-// separados. Ver docs/01-arquitetura-design/eventos-e-listeners.md
+// separados. Ver docs/01-arquitetura-design/04-eventos-e-listeners.md
 public interface DomainEventPublisher {
     void publish(Object event);
 }

@@ -22,7 +22,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 // ordem garantida entre dois updates seguidos da mesma categoria. Se o updateMulti
 // estourar, a excecao morre na thread do executor e os produtos ficam com o dado velho
 // PARA SEMPRE - sem ninguem para notar. Com broker de verdade isso viraria retry e dead
-// letter; ver docs/01-arquitetura-design/eventos-e-listeners.md
+// letter; ver docs/01-arquitetura-design/04-eventos-e-listeners.md
 //
 // @EventListener e nao @TransactionalEventListener porque nao ha transacao envolvida: o
 // service ja gravou a categoria antes de publicar

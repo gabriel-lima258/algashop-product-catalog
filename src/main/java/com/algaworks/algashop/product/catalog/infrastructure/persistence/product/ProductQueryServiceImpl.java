@@ -51,7 +51,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     // $lookup e acabar com o N+1 do @DocumentReference. Esse motivo ACABOU - a categoria
     // hoje esta embutida no proprio documento, entao nao ha nada a juntar. O que ainda
     // justifica o pipeline e so o $project la embaixo, que calcula os campos derivados no
-    // servidor. Ver docs/02-persistencia/desnormalizacao-mongo.md
+    // servidor. Ver docs/02-persistencia/08-desnormalizacao-mongo.md
     @Override
     public PageModel<ProductSummaryOutput> filter(ProductFilter filter) {
         // 1. monta os filtros. Optional e nao Criteria direto: um new Criteria() vazio vira
@@ -111,7 +111,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         // TODOS os documentos filtrados, nao sobre os 15 da pagina.
         // Os dois estagios foram aposentados pela desnormalizacao, nao por serem ruins:
         // sem categoria em outra colecao, nao ha o que juntar. Comparacao completa em
-        // docs/02-persistencia/desnormalizacao-mongo.md
+        // docs/02-persistencia/08-desnormalizacao-mongo.md
         //
         // ATENCAO ao que continua valendo: o $project abaixo ainda roda sobre todos os
         // documentos filtrados, antes do $skip/$limit. Projetar depois de paginar seria

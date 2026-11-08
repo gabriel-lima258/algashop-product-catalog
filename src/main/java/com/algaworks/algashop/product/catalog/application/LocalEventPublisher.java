@@ -18,7 +18,7 @@ package com.algaworks.algashop.product.catalog.application;
 // O ganho concreto continua o mesmo: o CategoryManagementApplicationService nao importa
 // nada de Spring para publicar, e Object (e nao um tipo Message proprio) porque nao ha
 // contrato de mensagem nesta altura.
-// Ver docs/01-arquitetura-design/eventos-e-listeners.md
+// Ver docs/01-arquitetura-design/04-eventos-e-listeners.md
 public interface LocalEventPublisher {
     void send(Object message);
 }

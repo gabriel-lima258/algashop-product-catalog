@@ -25,7 +25,7 @@ import java.util.UUID;
 // Por que nao o caminho obvio (findById -> if -> save): entre a leitura e a gravacao cabe
 // a operacao inteira de outra requisicao. Dois clientes leem estoque 1, os dois aprovam o
 // saque, os dois gravam 0 - e sairam duas unidades de um estoque que tinha uma.
-// Ver docs/02-persistencia/concorrencia-e-atomicidade.md
+// Ver docs/02-persistencia/09-concorrencia-e-atomicidade.md
 //
 // Sem @Transactional proprio: cada findAndModify ja e atomico por documento. Quando o
 // chamador abre uma transacao (restock, withdraw, reserveForOrder), o MongoOperations

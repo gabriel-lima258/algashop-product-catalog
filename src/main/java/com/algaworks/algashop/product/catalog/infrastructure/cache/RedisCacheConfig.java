@@ -74,7 +74,7 @@ public class RedisCacheConfig implements CachingConfigurer {
                         //    entradas. Até o TTL expirar, o cache serve o nome antigo
                         //    da categoria. Um minuto é o preço aceito por não acoplar
                         //    o listener ao cache — ver
-                        //    docs/01-arquitetura-design/cache.md
+                        //    docs/01-arquitetura-design/05-cache.md
                         defaultCacheConfig.disableCachingNullValues().entryTtl(Duration.ofMinutes(1)));
     }
 

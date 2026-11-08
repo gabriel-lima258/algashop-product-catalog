@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 //
 // Consequencia importante: como nao ha productRepository.save(), o mecanismo de eventos do
 // AbstractAggregateRoot (que publica no save) nao serve aqui. Dai o DomainEventPublisher
-// injetado - ver docs/01-arquitetura-design/eventos-e-listeners.md
+// injetado - ver docs/01-arquitetura-design/04-eventos-e-listeners.md
 //
 // O @Service coloca uma anotacao do Spring dentro do dominio. Nao e ideal, mas tambem nao
 // e novidade: Product e Category ja carregam anotacoes do Spring Data. A alternativa seria

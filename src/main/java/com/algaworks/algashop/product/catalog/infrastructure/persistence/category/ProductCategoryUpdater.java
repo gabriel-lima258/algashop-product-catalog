@@ -43,7 +43,7 @@ public class ProductCategoryUpdater {
         // produto inativo tambem precisa ter a copia atualizada. Resultado: a propagacao e
         // uma varredura da colecao, e ainda escreve em campo indexado, mexendo nos dois
         // indices compostos. Registrado como pendencia em
-        // docs/02-persistencia/desnormalizacao-mongo.md
+        // docs/02-persistencia/08-desnormalizacao-mongo.md
         mongoOperations.updateMulti(query, update, Product.class);
     }
 }

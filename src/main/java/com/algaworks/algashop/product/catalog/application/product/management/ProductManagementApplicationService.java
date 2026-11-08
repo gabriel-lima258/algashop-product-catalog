@@ -145,7 +145,7 @@ public class ProductManagementApplicationService {
     // antigo e REPOPULA o cache com ele - dado velho de volta, agora com o TTL inteiro
     // pela frente. Fechar isso de vez pediria @TransactionalEventListener(AFTER_COMMIT)
     // publicando a evicao, ou @EnableCaching(order = ...) forcando a precedencia. Fica
-    // registrado como pendencia em docs/01-arquitetura-design/cache.md; o TTL curto e o
+    // registrado como pendencia em docs/01-arquitetura-design/05-cache.md; o TTL curto e o
     // que limita o estrago enquanto isso.
     @Transactional
     @CacheEvict(cacheNames = CacheNames.PRODUCTS, key = "#productId")

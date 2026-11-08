@@ -108,7 +108,7 @@ public class ProductController {
     // 10" compoem; "passe a valer 40" nao.
     //
     // Respostas: 204 no sucesso, 404 se o produto nao existe, 422 se falta saldo
-    // (InsufficientStockException). Ver docs/02-persistencia/concorrencia-e-atomicidade.md
+    // (InsufficientStockException). Ver docs/02-persistencia/09-concorrencia-e-atomicidade.md
     @PostMapping("/{productId}/restock")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @CanWriteProductsStock

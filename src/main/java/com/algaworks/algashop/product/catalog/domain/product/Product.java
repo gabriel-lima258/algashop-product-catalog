@@ -44,7 +44,7 @@ import java.util.*;
 // Quem traduz e o mapping context do Spring Data: a propriedade chamada id de um objeto
 // embutido vira _id no documento, e a resolucao do path vale tambem para a def do
 // @CompoundIndex e para os Criteria. Conferir com db.products.getIndexes() -
-// ver docs/02-persistencia/desnormalizacao-mongo.md
+// ver docs/02-persistencia/08-desnormalizacao-mongo.md
 @CompoundIndex(name = "pidx_product_by_category_enabledTrue_salePrice",
         def = "{'category.id': 1, 'enabled': 1, 'salePrice': 1}",
         partialFilter = "{'enabled': true}")
@@ -59,7 +59,7 @@ import java.util.*;
 // Consequencia pratica: agregado que nunca passa pelo repositorio nao publica nada.
 // Escrita por MongoTemplate/MongoOperations (o updateMulti do ProductCategoryUpdater,
 // por exemplo) e invisivel para este mecanismo.
-// Ver docs/01-arquitetura-design/eventos-e-listeners.md
+// Ver docs/01-arquitetura-design/04-eventos-e-listeners.md
 public class Product extends AbstractAggregateRoot<Product> {
 
     @Id
@@ -106,7 +106,7 @@ public class Product extends AbstractAggregateRoot<Product> {
     // categoryId e quem quisesse o nome dela fazia uma leitura a mais (o N+1), ou um
     // $lookup no pipeline. Mantido comentado de proposito, como referencia de estudo;
     // a comparacao completa dos dois jeitos esta em
-    // docs/02-persistencia/desnormalizacao-mongo.md
+    // docs/02-persistencia/08-desnormalizacao-mongo.md
 //    @DocumentReference
 //    @Field(name = "categoryId")
 //    private UUID categoryId;

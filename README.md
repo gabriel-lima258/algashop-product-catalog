@@ -214,7 +214,7 @@ O grupo `readiness` inclui **apenas o MongoDB** — o Redis fora do ar não tira
 
 > ⚠️ `DEGRADED` devolve **HTTP 200**: só `DOWN` e `OUT_OF_SERVICE` viram 503 por padrão. Um probe que olhe o código de status não vê diferença.
 
-Detalhes em [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/health-checks.md).
+Detalhes em [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/07-health-checks.md).
 
 ---
 
@@ -266,7 +266,7 @@ algashop:
 
 > ⚠️ A URL assinada aponta para `algashop-localstack:4566` e vai para o navegador — as três linhas de LocalStack no arquivo `hosts` são o que a tornam alcançável.
 
-Detalhes em [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/armazenamento-de-arquivos.md).
+Detalhes em [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/11-armazenamento-de-arquivos.md).
 
 
 ### Segurança — escopos exigidos
@@ -290,7 +290,7 @@ TOKEN=$(curl -s -u algashop-test:testing123 -d grant_type=client_credentials \
 curl -s -H "Authorization: Bearer $TOKEN" localhost:8083/api/v1/...
 ```
 
-Sem token → **401**. Com token e sem o escopo → **403**. Detalhes em [Resource servers e escopos](https://github.com/gabriel-lima258/algashop-docs/blob/main/05-seguranca/resource-server-e-escopos.md).
+Sem token → **401**. Com token e sem o escopo → **403**. Detalhes em [Resource servers e escopos](https://github.com/gabriel-lima258/algashop-docs/blob/main/05-seguranca/03-resource-server-e-escopos.md).
 
 ---
 
@@ -298,15 +298,15 @@ Sem token → **401**. Com token e sem o escopo → **403**. Detalhes em [Resour
 
 Este é o serviço mais documentado do projeto. Em [`algashop-docs`](https://github.com/gabriel-lima258/algashop-docs):
 
-- [MongoDB no product-catalog](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/product-catalog-mongo.md) — modelagem documental, UUID como `_id`, auditoria, lock otimista
-- [Normalizado × desnormalizado](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/desnormalizacao-mongo.md) — quando duplicar dado é decisão, e o que ela cobra
-- [Concorrência e atomicidade](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/concorrencia-e-atomicidade.md) — lost update, `findAndModify`, `$inc` como delta
-- [Transações e replica set](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/transacoes-mongo.md) — por que transação exige cluster, e quando ela não acrescenta nada
-- [Eventos e listeners](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/eventos-e-listeners.md) — os três mecanismos, e o que a consistência eventual custa
-- [Cache](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/cache.md) — cache-aside × write-through, invalidação e por que a idade de um dado é a soma das camadas
-- [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/armazenamento-de-arquivos.md) — URL pré-assinada e o upload que não passa pelo backend
-- [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/health-checks.md) — liveness × readiness e o status DEGRADED
-- [Resource servers e escopos](https://github.com/gabriel-lima258/algashop-docs/blob/main/05-seguranca/resource-server-e-escopos.md) — escopo por rota, 401 × 403 e a matriz de testes
-- [Redis na prática](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/redis.md) — eviction, TTL, inspeção e a armadilha da senha vazia
-- [Consultas com Criteria](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/consultas-mongo-criteria.md) · [Índices](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/indices-mongo.md) · [Aggregation Pipeline](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/agregacoes-mongo.md)
-- [Carga de dados](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/carga-de-dados-mongo.md) · [Ambiente local](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/ambiente-local.md)
+- [MongoDB no product-catalog](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/04-product-catalog-mongo.md) — modelagem documental, UUID como `_id`, auditoria, lock otimista
+- [Normalizado × desnormalizado](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/08-desnormalizacao-mongo.md) — quando duplicar dado é decisão, e o que ela cobra
+- [Concorrência e atomicidade](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/09-concorrencia-e-atomicidade.md) — lost update, `findAndModify`, `$inc` como delta
+- [Transações e replica set](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/10-transacoes-mongo.md) — por que transação exige cluster, e quando ela não acrescenta nada
+- [Eventos e listeners](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/04-eventos-e-listeners.md) — os três mecanismos, e o que a consistência eventual custa
+- [Cache](https://github.com/gabriel-lima258/algashop-docs/blob/main/01-arquitetura-design/05-cache.md) — cache-aside × write-through, invalidação e por que a idade de um dado é a soma das camadas
+- [Armazenamento de arquivos](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/11-armazenamento-de-arquivos.md) — URL pré-assinada e o upload que não passa pelo backend
+- [Health check e degradação](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/07-health-checks.md) — liveness × readiness e o status DEGRADED
+- [Resource servers e escopos](https://github.com/gabriel-lima258/algashop-docs/blob/main/05-seguranca/03-resource-server-e-escopos.md) — escopo por rota, 401 × 403 e a matriz de testes
+- [Redis na prática](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/05-redis.md) — eviction, TTL, inspeção e a armadilha da senha vazia
+- [Consultas com Criteria](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/05-consultas-mongo-criteria.md) · [Índices](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/06-indices-mongo.md) · [Aggregation Pipeline](https://github.com/gabriel-lima258/algashop-docs/blob/main/02-persistencia/07-agregacoes-mongo.md)
+- [Carga de dados](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/03-carga-de-dados-mongo.md) · [Ambiente local](https://github.com/gabriel-lima258/algashop-docs/blob/main/04-infraestrutura/01-ambiente-local.md)
